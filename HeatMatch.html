@@ -761,7 +761,7 @@ main { flex: 1; min-width: 0; padding: 26px 32px 60px; max-width: 1600px; }
 .btn.heat:hover { background: var(--heat-500); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn.sm { padding: 5px 10px; font-size: 12.5px; }
-input[type=text], input[type=number], input[type=email], select, textarea { font: inherit; color: var(--text); border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 10px; width: 100%; }
+input[type=text], input[type=number], input[type=email], input[type=password], select, textarea { font: inherit; color: var(--text); border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 10px; width: 100%; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand-100); border-color: var(--brand-500); }
 textarea { resize: vertical; line-height: 1.5; }
 label.field { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); }
@@ -958,9 +958,25 @@ nav a.active svg { color: var(--brand-700); }
 .map-style button + button { border-left: 1px solid var(--line); }
 .map-style button.on { background: var(--brand-700); color: #fff; }
 .is-satellite .leaflet-overlay-pane path[stroke-dasharray] { stroke: #fff; stroke-opacity: .9; }
+
+/* ---------- login ---------- */
+body.locked .sidebar, body.locked .mobile-top { display: none; }
+body.locked main { max-width: none; padding: 0; }
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+  background: radial-gradient(1200px 600px at 85% -10%, var(--brand-100), transparent 60%), var(--bg); }
+.login-card { width: min(400px, 100%); padding: 34px 32px 26px; text-align: left; border-top: 4px solid var(--ft-orange); }
+.login-logo { height: 52px; display: block; margin-bottom: 18px; }
+.login-btn { width: 100%; justify-content: center; margin-top: 18px; padding: 11px; font-size: 15px; }
+.login-error { color: var(--bad-600); font-size: 13px; font-weight: 600; min-height: 18px; margin-top: 10px; }
+.login-foot { font-size: 12px; text-align: center; margin: 16px 0 0; }
+.user-box { margin-top: auto; padding: 14px 20px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); }
+.user-box:empty { display: none; }
+.user-box + .sidebar-foot { margin-top: 0; }
+.avatar { width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--brand-100); color: var(--brand-700); display: grid; place-items: center; font-weight: 700; }
+.user-email { font-size: 12.5px; font-weight: 600; color: var(--brand-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 </style>
 </head>
-<body>
+<body class="locked">
   <aside class="sidebar">
     <div class="brand">
       <img src="data:image/png;base64,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" alt="FT">
@@ -972,6 +988,7 @@ nav a.active svg { color: var(--brand-700); }
       <a href="#/pipeline" data-nav="pipeline"><svg viewBox="0 0 24 24"><path d="M4 5h4v14H4zM10 5h4v9h-4zM16 5h4v5h-4z"/></svg>Partnership pipeline</a>
       <a href="#/outbox" data-nav="outbox"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 6l9 7 9-7"/></svg>Outbox <span class="nav-count" id="outboxCount"></span></a>
     </nav>
+    <div class="user-box" id="userBox"></div>
     <div class="sidebar-foot">
       <div class="demo-pill">Demo data</div>
       <button class="link-btn" id="resetBtn">Reset demo</button>
@@ -1449,8 +1466,38 @@ async function api(req, res, url) {
   return send(res, 404, { error: 'Not found' });
 }
 
+const SESSIONS = new Map(); // token -> email (in memory; restart = sign in again)
 
+// ---- authentication (browser-only demo gate) ----
+const AUTHMOD = { exports: {} };
+(function(module){ // Access rule for HeatMatch: anyone with an @alumni.esade.edu email + the shared password.
+// NOTE: in the single-file HeatMatch.html this check runs in the browser, so it is a demo gate,
+// not real security. The Node server version (server.js) enforces it server-side.
+const AUTH = {
+  domain: 'alumni.esade.edu',
+  password: 'FTESADE',
+};
+
+function checkLogin(email, password) {
+  const e = String(email || '').trim().toLowerCase();
+  const re = new RegExp('^[^\\s@]+@' + AUTH.domain.replace(/\./g, '\\.') + '$');
+  if (!re.test(e)) return { ok: false, error: `Use your @${AUTH.domain} email address.` };
+  if (String(password || '') !== AUTH.password) return { ok: false, error: 'Incorrect password.' };
+  return { ok: true, email: e };
+}
+
+if (typeof module !== 'undefined') module.exports = { checkLogin, AUTH };
+ })(AUTHMOD);
+const AUTH_KEY = 'hm-auth';
+const getAuth = () => { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return window.__hmAuth || null; } };
+const setAuth = v => { window.__hmAuth = v; try { v ? localStorage.setItem(AUTH_KEY, v) : localStorage.removeItem(AUTH_KEY); } catch (e) {} };
 window.LOCAL_API = async function(path, method, payload) {
+  if (path === '/login') { const r = AUTHMOD.exports.checkLogin(payload && payload.email, payload && payload.password);
+    if (!r.ok) return { code: 401, data: { error: r.error } }; setAuth(r.email); return { code: 200, data: { email: r.email } }; }
+  if (path === '/logout') { setAuth(null); return { code: 200, data: { ok: true } }; }
+  const who = getAuth();
+  if (!who) return { code: 401, data: { error: 'Please sign in', auth: true } };
+  if (path === '/session') return { code: 200, data: { email: who } };
   const url = new URL('/api' + path, 'http://local');
   const res = { code: 200, data: null };
   await api({ method, body: payload }, res, url);
@@ -1473,14 +1520,19 @@ const ago = t => { const d = (Date.now() - t) / 864e5; return d < 1 ? 'today' : 
 const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '-');
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+class AuthError extends Error { constructor() { super('Please sign in'); this.auth = true; } }
+let SESSION = null; // signed-in email
+
 async function api(path, opts = {}) {
   if (window.LOCAL_API) { // standalone (no-server) build
     const r = await window.LOCAL_API(path, opts.method || 'GET', opts.body ? JSON.parse(JSON.stringify(opts.body)) : undefined);
+    if (r.code === 401 && r.data.auth) { showLogin(); throw new AuthError(); }
     if (r.code >= 400) throw new Error(r.data.error || 'Request failed');
     return JSON.parse(JSON.stringify(r.data));
   }
   const res = await fetch('/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
   const data = await res.json();
+  if (res.status === 401 && data.auth) { showLogin(); throw new AuthError(); }
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
@@ -2032,6 +2084,47 @@ function mount(html, init) {
 function closeModal() { $('#modalRoot').innerHTML = ''; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+
+// ======================= LOGIN =======================
+function showLogin(errorMsg) {
+  SESSION = null; closeModal(); destroyMaps();
+  document.body.classList.add('locked');
+  const logo = document.querySelector('.brand img').getAttribute('src');
+  $('#app').innerHTML = `
+  <div class="login-wrap">
+    <form class="login-card card" id="loginForm" novalidate>
+      <img src="${logo}" alt="FT" class="login-logo">
+      <h1>Heat<span style="color:var(--ft-orange)">Match</span></h1>
+      <p class="muted" style="margin:4px 0 22px">Sign in to the heat partnership platform</p>
+      <label class="field">Email<input type="email" name="email" id="lEmail" placeholder="name@alumni.esade.edu" autocomplete="username" required></label>
+      <label class="field" style="margin-top:14px">Password<input type="password" name="password" id="lPass" autocomplete="current-password" required></label>
+      <div class="login-error" id="lErr" role="alert">${errorMsg ? esc(errorMsg) : ''}</div>
+      <button class="btn primary login-btn" type="submit">Sign in</button>
+      <p class="muted login-foot">Access is restricted to authorised ESADE alumni accounts.</p>
+    </form>
+  </div>`;
+  $('#lEmail').focus();
+  $('#loginForm').onsubmit = async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const r = await api('/login', { method: 'POST', body: { email: $('#lEmail').value, password: $('#lPass').value } });
+      SESSION = r.email;
+      document.body.classList.remove('locked');
+      renderUser(); refreshCounts();
+      if (!location.hash || location.hash === '#/login') location.hash = '#/overview'; else route();
+    } catch (err) {
+      $('#lErr').textContent = err.message; btn.disabled = false; btn.textContent = 'Sign in';
+      $('#lPass').value = ''; $('#lPass').focus();
+    }
+  };
+}
+function renderUser() {
+  $('#userBox').innerHTML = SESSION ? `<div class="avatar">${esc(SESSION[0].toUpperCase())}</div>
+    <div style="min-width:0"><div class="user-email" title="${esc(SESSION)}">${esc(SESSION)}</div><button class="link-btn" id="logoutBtn" style="padding:0">Sign out</button></div>` : '';
+  const b = $('#logoutBtn'); if (b) b.onclick = async () => { try { await api('/logout', { method: 'POST' }); } catch (_) {} showLogin(); };
+}
+
 // ======================= router =======================
 async function refreshCounts() { try { const o = await api('/outbox'); $('#outboxCount').textContent = o.length || ''; } catch {} }
 async function route() {
@@ -2041,6 +2134,7 @@ async function route() {
   const app = $('#app');
   app.innerHTML = '<div class="empty">Loading…</div>';
   try {
+    if (!SESSION) { SESSION = (await api('/session')).email; document.body.classList.remove('locked'); renderUser(); refreshCounts(); }
     if (!META) META = await api('/meta');
     if (page === 'installations') await viewInstallations(app);
     else if (page === 'site' && arg) await viewSite(app, arg);
@@ -2048,12 +2142,11 @@ async function route() {
     else if (page === 'outbox') await viewOutbox(app);
     else await viewOverview(app);
     window.scrollTo(0, 0);
-  } catch (e) { app.innerHTML = `<div class="empty">Something went wrong: ${esc(e.message)}<br><a href="#/overview">Back to overview</a></div>`; console.error(e); }
+  } catch (e) { if (e.auth) return; app.innerHTML = `<div class="empty">Something went wrong: ${esc(e.message)}<br><a href="#/overview">Back to overview</a></div>`; console.error(e); }
 }
 window.addEventListener('hashchange', route);
 $('#menuBtn').onclick = () => document.body.classList.toggle('menu');
 $('#resetBtn').onclick = async () => { if (confirm('Reset all demo data (pipeline, emails, edits) to the starting state?')) { await api('/reset', { method: 'POST' }); META = null; toast('Demo data reset'); refreshCounts(); route(); } };
-refreshCounts();
 route();
 })();
 </script>

@@ -3,6 +3,11 @@
 A heat-matching platform that helps FT find businesses near its cremators that could buy their surplus heat.
 All installations, companies, contacts and numbers are **fictional demo data**.
 
+## Sign in
+
+Use any **@alumni.esade.edu** email address with the shared password (ask the team). Change the rule in `lib/auth.js`.
+In `HeatMatch.html` the check runs in the browser, so it keeps casual visitors out but is not real security. The server version (`node server.js`) checks it on the server.
+
 ## Easiest: no install
 
 Double-click **`HeatMatch.html`**. It opens in your browser and everything runs inside that one file.

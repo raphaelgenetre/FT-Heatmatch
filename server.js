@@ -4,6 +4,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const D = require('./lib/data');
+const crypto = require('crypto');
+const { checkLogin } = require('./lib/auth');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC = path.join(__dirname, 'public');
@@ -229,10 +231,32 @@ async function api(req, res, url) {
   return send(res, 404, { error: 'Not found' });
 }
 
+const SESSIONS = new Map(); // token -> email (in memory; restart = sign in again)
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
-    if (url.pathname.startsWith('/api/')) return await api(req, res, url);
+    if (url.pathname.startsWith('/api/')) {
+      // ---- authentication (server-side) ----
+      const token = (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(([k]) => k === 'hm_session')?.[1];
+      const email = token && SESSIONS.get(token);
+      if (url.pathname === '/api/login' && req.method === 'POST') {
+        const b = await body(req);
+        const r = checkLogin(b.email, b.password);
+        if (!r.ok) return send(res, 401, { error: r.error });
+        const t = crypto.randomBytes(24).toString('hex');
+        SESSIONS.set(t, r.email);
+        res.setHeader('Set-Cookie', `hm_session=${t}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 7}`);
+        return send(res, 200, { email: r.email });
+      }
+      if (url.pathname === '/api/logout' && req.method === 'POST') {
+        if (token) SESSIONS.delete(token);
+        res.setHeader('Set-Cookie', 'hm_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
+        return send(res, 200, { ok: true });
+      }
+      if (!email) return send(res, 401, { error: 'Please sign in', auth: true });
+      if (url.pathname === '/api/session') return send(res, 200, { email });
+      return await api(req, res, url);
+    }
     let f = path.normalize(path.join(PUBLIC, decodeURIComponent(url.pathname)));
     if (!f.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
     if (url.pathname === '/' || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(PUBLIC, 'index.html');

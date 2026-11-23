@@ -6,6 +6,7 @@ rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 js = lambda t: t.replace('</script', '<\\/script')
 
 data_js = rd('lib/data.js')
+auth_js = rd('lib/auth.js')
 srv = rd('server.js')
 core = srv[srv.index('const STATUSES'):srv.index('http.createServer')]
 core = core.replace("const BASE_SITES = D.generateSites();", "const BASE_SITES = D.generateSites();")
@@ -22,7 +23,19 @@ const module = {{ exports: {{}} }};
 const D = module.exports;
 const KEY = 'ft-heatmatch-state-v1';
 {core}
+// ---- authentication (browser-only demo gate) ----
+const AUTHMOD = {{ exports: {{}} }};
+(function(module){{ {auth_js} }})(AUTHMOD);
+const AUTH_KEY = 'hm-auth';
+const getAuth = () => {{ try {{ return localStorage.getItem(AUTH_KEY); }} catch (e) {{ return window.__hmAuth || null; }} }};
+const setAuth = v => {{ window.__hmAuth = v; try {{ v ? localStorage.setItem(AUTH_KEY, v) : localStorage.removeItem(AUTH_KEY); }} catch (e) {{}} }};
 window.LOCAL_API = async function(path, method, payload) {{
+  if (path === '/login') {{ const r = AUTHMOD.exports.checkLogin(payload && payload.email, payload && payload.password);
+    if (!r.ok) return {{ code: 401, data: {{ error: r.error }} }}; setAuth(r.email); return {{ code: 200, data: {{ email: r.email }} }}; }}
+  if (path === '/logout') {{ setAuth(null); return {{ code: 200, data: {{ ok: true }} }}; }}
+  const who = getAuth();
+  if (!who) return {{ code: 401, data: {{ error: 'Please sign in', auth: true }} }};
+  if (path === '/session') return {{ code: 200, data: {{ email: who }} }};
   const url = new URL('/api' + path, 'http://local');
   const res = {{ code: 200, data: null }};
   await api({{ method, body: payload }}, res, url);

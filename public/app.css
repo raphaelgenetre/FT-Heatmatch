@@ -57,7 +57,7 @@ main { flex: 1; min-width: 0; padding: 26px 32px 60px; max-width: 1600px; }
 .btn.heat:hover { background: var(--heat-500); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .btn.sm { padding: 5px 10px; font-size: 12.5px; }
-input[type=text], input[type=number], input[type=email], select, textarea { font: inherit; color: var(--text); border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 10px; width: 100%; }
+input[type=text], input[type=number], input[type=email], input[type=password], select, textarea { font: inherit; color: var(--text); border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 10px; width: 100%; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand-100); border-color: var(--brand-500); }
 textarea { resize: vertical; line-height: 1.5; }
 label.field { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); }
@@ -254,3 +254,19 @@ nav a.active svg { color: var(--brand-700); }
 .map-style button + button { border-left: 1px solid var(--line); }
 .map-style button.on { background: var(--brand-700); color: #fff; }
 .is-satellite .leaflet-overlay-pane path[stroke-dasharray] { stroke: #fff; stroke-opacity: .9; }
+
+/* ---------- login ---------- */
+body.locked .sidebar, body.locked .mobile-top { display: none; }
+body.locked main { max-width: none; padding: 0; }
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+  background: radial-gradient(1200px 600px at 85% -10%, var(--brand-100), transparent 60%), var(--bg); }
+.login-card { width: min(400px, 100%); padding: 34px 32px 26px; text-align: left; border-top: 4px solid var(--ft-orange); }
+.login-logo { height: 52px; display: block; margin-bottom: 18px; }
+.login-btn { width: 100%; justify-content: center; margin-top: 18px; padding: 11px; font-size: 15px; }
+.login-error { color: var(--bad-600); font-size: 13px; font-weight: 600; min-height: 18px; margin-top: 10px; }
+.login-foot { font-size: 12px; text-align: center; margin: 16px 0 0; }
+.user-box { margin-top: auto; padding: 14px 20px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); }
+.user-box:empty { display: none; }
+.user-box + .sidebar-foot { margin-top: 0; }
+.avatar { width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--brand-100); color: var(--brand-700); display: grid; place-items: center; font-weight: 700; }
+.user-email { font-size: 12.5px; font-weight: 600; color: var(--brand-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
