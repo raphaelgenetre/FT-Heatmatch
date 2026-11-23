@@ -14,14 +14,19 @@ const ago = t => { const d = (Date.now() - t) / 864e5; return d < 1 ? 'today' : 
 const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '-');
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+class AuthError extends Error { constructor() { super('Please sign in'); this.auth = true; } }
+let SESSION = null; // signed-in email
+
 async function api(path, opts = {}) {
   if (window.LOCAL_API) { // standalone (no-server) build
     const r = await window.LOCAL_API(path, opts.method || 'GET', opts.body ? JSON.parse(JSON.stringify(opts.body)) : undefined);
+    if (r.code === 401 && r.data.auth) { showLogin(); throw new AuthError(); }
     if (r.code >= 400) throw new Error(r.data.error || 'Request failed');
     return JSON.parse(JSON.stringify(r.data));
   }
   const res = await fetch('/api' + path, { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
   const data = await res.json();
+  if (res.status === 401 && data.auth) { showLogin(); throw new AuthError(); }
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
@@ -573,6 +578,47 @@ function mount(html, init) {
 function closeModal() { $('#modalRoot').innerHTML = ''; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+
+// ======================= LOGIN =======================
+function showLogin(errorMsg) {
+  SESSION = null; closeModal(); destroyMaps();
+  document.body.classList.add('locked');
+  const logo = document.querySelector('.brand img').getAttribute('src');
+  $('#app').innerHTML = `
+  <div class="login-wrap">
+    <form class="login-card card" id="loginForm" novalidate>
+      <img src="${logo}" alt="FT" class="login-logo">
+      <h1>Heat<span style="color:var(--ft-orange)">Match</span></h1>
+      <p class="muted" style="margin:4px 0 22px">Sign in to the heat partnership platform</p>
+      <label class="field">Email<input type="email" name="email" id="lEmail" placeholder="name@alumni.esade.edu" autocomplete="username" required></label>
+      <label class="field" style="margin-top:14px">Password<input type="password" name="password" id="lPass" autocomplete="current-password" required></label>
+      <div class="login-error" id="lErr" role="alert">${errorMsg ? esc(errorMsg) : ''}</div>
+      <button class="btn primary login-btn" type="submit">Sign in</button>
+      <p class="muted login-foot">Access is restricted to authorised ESADE alumni accounts.</p>
+    </form>
+  </div>`;
+  $('#lEmail').focus();
+  $('#loginForm').onsubmit = async e => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const r = await api('/login', { method: 'POST', body: { email: $('#lEmail').value, password: $('#lPass').value } });
+      SESSION = r.email;
+      document.body.classList.remove('locked');
+      renderUser(); refreshCounts();
+      if (!location.hash || location.hash === '#/login') location.hash = '#/overview'; else route();
+    } catch (err) {
+      $('#lErr').textContent = err.message; btn.disabled = false; btn.textContent = 'Sign in';
+      $('#lPass').value = ''; $('#lPass').focus();
+    }
+  };
+}
+function renderUser() {
+  $('#userBox').innerHTML = SESSION ? `<div class="avatar">${esc(SESSION[0].toUpperCase())}</div>
+    <div style="min-width:0"><div class="user-email" title="${esc(SESSION)}">${esc(SESSION)}</div><button class="link-btn" id="logoutBtn" style="padding:0">Sign out</button></div>` : '';
+  const b = $('#logoutBtn'); if (b) b.onclick = async () => { try { await api('/logout', { method: 'POST' }); } catch (_) {} showLogin(); };
+}
+
 // ======================= router =======================
 async function refreshCounts() { try { const o = await api('/outbox'); $('#outboxCount').textContent = o.length || ''; } catch {} }
 async function route() {
@@ -582,6 +628,7 @@ async function route() {
   const app = $('#app');
   app.innerHTML = '<div class="empty">Loading…</div>';
   try {
+    if (!SESSION) { SESSION = (await api('/session')).email; document.body.classList.remove('locked'); renderUser(); refreshCounts(); }
     if (!META) META = await api('/meta');
     if (page === 'installations') await viewInstallations(app);
     else if (page === 'site' && arg) await viewSite(app, arg);
@@ -589,11 +636,10 @@ async function route() {
     else if (page === 'outbox') await viewOutbox(app);
     else await viewOverview(app);
     window.scrollTo(0, 0);
-  } catch (e) { app.innerHTML = `<div class="empty">Something went wrong: ${esc(e.message)}<br><a href="#/overview">Back to overview</a></div>`; console.error(e); }
+  } catch (e) { if (e.auth) return; app.innerHTML = `<div class="empty">Something went wrong: ${esc(e.message)}<br><a href="#/overview">Back to overview</a></div>`; console.error(e); }
 }
 window.addEventListener('hashchange', route);
 $('#menuBtn').onclick = () => document.body.classList.toggle('menu');
 $('#resetBtn').onclick = async () => { if (confirm('Reset all demo data (pipeline, emails, edits) to the starting state?')) { await api('/reset', { method: 'POST' }); META = null; toast('Demo data reset'); refreshCounts(); route(); } };
-refreshCounts();
 route();
 })();
