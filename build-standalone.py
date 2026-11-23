@@ -23,12 +23,12 @@ const module = {{ exports: {{}} }};
 const D = module.exports;
 const KEY = 'ft-heatmatch-state-v1';
 {core}
-// ---- authentication (browser-only demo gate) ----
+// ---- authentication (browser-only demo gate; sessionStorage = signed out when the tab is closed) ----
 const AUTHMOD = {{ exports: {{}} }};
 (function(module){{ {auth_js} }})(AUTHMOD);
 const AUTH_KEY = 'hm-auth';
-const getAuth = () => {{ try {{ return localStorage.getItem(AUTH_KEY); }} catch (e) {{ return window.__hmAuth || null; }} }};
-const setAuth = v => {{ window.__hmAuth = v; try {{ v ? localStorage.setItem(AUTH_KEY, v) : localStorage.removeItem(AUTH_KEY); }} catch (e) {{}} }};
+const getAuth = () => {{ try {{ return sessionStorage.getItem(AUTH_KEY); }} catch (e) {{ return window.__hmAuth || null; }} }};
+const setAuth = v => {{ window.__hmAuth = v; try {{ v ? sessionStorage.setItem(AUTH_KEY, v) : sessionStorage.removeItem(AUTH_KEY); }} catch (e) {{}} }};
 window.LOCAL_API = async function(path, method, payload) {{
   if (path === '/login') {{ const r = AUTHMOD.exports.checkLogin(payload && payload.email, payload && payload.password);
     if (!r.ok) return {{ code: 401, data: {{ error: r.error }} }}; setAuth(r.email); return {{ code: 200, data: {{ email: r.email }} }}; }}

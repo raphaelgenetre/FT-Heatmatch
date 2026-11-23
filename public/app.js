@@ -580,8 +580,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 
 
 // ======================= LOGIN =======================
+// The sign-in lives only as long as this browser tab: closing the tab/window signs you out,
+// reloading the page keeps you signed in (sessionStorage is per tab and survives reloads).
+let tabFlag = false;
+function tabSignedIn() { try { return sessionStorage.getItem('hm-tab') === '1'; } catch (_) { return tabFlag; } }
+function setTabSignedIn(v) { tabFlag = v; try { v ? sessionStorage.setItem('hm-tab', '1') : sessionStorage.removeItem('hm-tab'); } catch (_) {} }
 function showLogin(errorMsg) {
-  SESSION = null; closeModal(); destroyMaps();
+  SESSION = null; setTabSignedIn(false); closeModal(); destroyMaps();
   document.body.classList.add('locked');
   const logo = document.querySelector('.brand img').getAttribute('src');
   $('#app').innerHTML = `
@@ -603,7 +608,7 @@ function showLogin(errorMsg) {
     const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
     try {
       const r = await api('/login', { method: 'POST', body: { email: $('#lEmail').value, password: $('#lPass').value } });
-      SESSION = r.email;
+      SESSION = r.email; setTabSignedIn(true);
       document.body.classList.remove('locked');
       renderUser(); refreshCounts();
       if (!location.hash || location.hash === '#/login') location.hash = '#/overview'; else route();
@@ -628,6 +633,7 @@ async function route() {
   const app = $('#app');
   app.innerHTML = '<div class="empty">Loading…</div>';
   try {
+    if (!SESSION && !tabSignedIn()) { try { await api('/logout', { method: 'POST' }); } catch (_) {} return showLogin(); }
     if (!SESSION) { SESSION = (await api('/session')).email; document.body.classList.remove('locked'); renderUser(); refreshCounts(); }
     if (!META) META = await api('/meta');
     if (page === 'installations') await viewInstallations(app);

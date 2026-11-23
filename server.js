@@ -245,7 +245,7 @@ http.createServer(async (req, res) => {
         if (!r.ok) return send(res, 401, { error: r.error });
         const t = crypto.randomBytes(24).toString('hex');
         SESSIONS.set(t, r.email);
-        res.setHeader('Set-Cookie', `hm_session=${t}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 7}`);
+        res.setHeader('Set-Cookie', `hm_session=${t}; HttpOnly; SameSite=Lax; Path=/`); // session cookie: no expiry date
         return send(res, 200, { email: r.email });
       }
       if (url.pathname === '/api/logout' && req.method === 'POST') {
