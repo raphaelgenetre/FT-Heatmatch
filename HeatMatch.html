@@ -1468,7 +1468,7 @@ async function api(req, res, url) {
 
 const SESSIONS = new Map(); // token -> email (in memory; restart = sign in again)
 
-// ---- authentication (browser-only demo gate) ----
+// ---- authentication (browser-only demo gate; sessionStorage = signed out when the tab is closed) ----
 const AUTHMOD = { exports: {} };
 (function(module){ // Access rule for HeatMatch: anyone with an @alumni.esade.edu email + the shared password.
 // NOTE: in the single-file HeatMatch.html this check runs in the browser, so it is a demo gate,
@@ -1489,8 +1489,8 @@ function checkLogin(email, password) {
 if (typeof module !== 'undefined') module.exports = { checkLogin, AUTH };
  })(AUTHMOD);
 const AUTH_KEY = 'hm-auth';
-const getAuth = () => { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return window.__hmAuth || null; } };
-const setAuth = v => { window.__hmAuth = v; try { v ? localStorage.setItem(AUTH_KEY, v) : localStorage.removeItem(AUTH_KEY); } catch (e) {} };
+const getAuth = () => { try { return sessionStorage.getItem(AUTH_KEY); } catch (e) { return window.__hmAuth || null; } };
+const setAuth = v => { window.__hmAuth = v; try { v ? sessionStorage.setItem(AUTH_KEY, v) : sessionStorage.removeItem(AUTH_KEY); } catch (e) {} };
 window.LOCAL_API = async function(path, method, payload) {
   if (path === '/login') { const r = AUTHMOD.exports.checkLogin(payload && payload.email, payload && payload.password);
     if (!r.ok) return { code: 401, data: { error: r.error } }; setAuth(r.email); return { code: 200, data: { email: r.email } }; }
@@ -2086,8 +2086,13 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 
 
 // ======================= LOGIN =======================
+// The sign-in lives only as long as this browser tab: closing the tab/window signs you out,
+// reloading the page keeps you signed in (sessionStorage is per tab and survives reloads).
+let tabFlag = false;
+function tabSignedIn() { try { return sessionStorage.getItem('hm-tab') === '1'; } catch (_) { return tabFlag; } }
+function setTabSignedIn(v) { tabFlag = v; try { v ? sessionStorage.setItem('hm-tab', '1') : sessionStorage.removeItem('hm-tab'); } catch (_) {} }
 function showLogin(errorMsg) {
-  SESSION = null; closeModal(); destroyMaps();
+  SESSION = null; setTabSignedIn(false); closeModal(); destroyMaps();
   document.body.classList.add('locked');
   const logo = document.querySelector('.brand img').getAttribute('src');
   $('#app').innerHTML = `
@@ -2109,7 +2114,7 @@ function showLogin(errorMsg) {
     const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Signing in…';
     try {
       const r = await api('/login', { method: 'POST', body: { email: $('#lEmail').value, password: $('#lPass').value } });
-      SESSION = r.email;
+      SESSION = r.email; setTabSignedIn(true);
       document.body.classList.remove('locked');
       renderUser(); refreshCounts();
       if (!location.hash || location.hash === '#/login') location.hash = '#/overview'; else route();
@@ -2134,6 +2139,7 @@ async function route() {
   const app = $('#app');
   app.innerHTML = '<div class="empty">Loading…</div>';
   try {
+    if (!SESSION && !tabSignedIn()) { try { await api('/logout', { method: 'POST' }); } catch (_) {} return showLogin(); }
     if (!SESSION) { SESSION = (await api('/session')).email; document.body.classList.remove('locked'); renderUser(); refreshCounts(); }
     if (!META) META = await api('/meta');
     if (page === 'installations') await viewInstallations(app);
