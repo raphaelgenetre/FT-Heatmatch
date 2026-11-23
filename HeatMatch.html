@@ -856,6 +856,14 @@ td.r, th.r { text-align: right; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .section-title { margin: 20px 0 10px; }
+.find-panel .search-row { display: flex; gap: 8px; margin: 12px 0 8px; flex-wrap: wrap; }
+.find-panel .search-row input[type=text] { flex: 1; min-width: 180px; }
+.find-summary { font-size: 12.5px; margin-bottom: 8px; }
+.match-list { display: grid; gap: 8px; max-height: 470px; overflow: auto; padding-right: 2px; }
+.match-item { display: block; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; color: inherit; text-decoration: none; background: #fff; }
+.match-item:hover { border-color: var(--ft-orange); }
+.match-item .t { font-weight: 600; color: var(--brand-900); }
+.match-item .m { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font-size: 12px; background: var(--brand-100); color: var(--brand-700); border: 0; border-radius: 5px; padding: 3px 8px; cursor: pointer; font-family: ui-monospace, monospace; }
 .email-preview { background: #fafbfd; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; white-space: pre-wrap; font-size: 13px; max-height: 360px; overflow: auto; }
@@ -985,6 +993,7 @@ body.locked main { max-width: none; padding: 0; }
     <nav>
       <a href="#/overview" data-nav="overview"><svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>Global overview</a>
       <a href="#/installations" data-nav="installations"><svg viewBox="0 0 24 24"><path d="M4 20V9l5-3v4l5-3v4l6-3v12zM8 16h1M12 16h1M16 16h1"/></svg>Installations</a>
+      <a href="#/matching" data-nav="matching"><svg viewBox="0 0 24 24"><path d="M4 19h16M7 15l3-4 3 2 5-6"/></svg>Matching patterns</a>
       <a href="#/pipeline" data-nav="pipeline"><svg viewBox="0 0 24 24"><path d="M4 5h4v14H4zM10 5h4v9h-4zM16 5h4v5h-4z"/></svg>Partnership pipeline</a>
       <a href="#/outbox" data-nav="outbox"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 6l9 7 9-7"/></svg>Outbox <span class="nav-count" id="outboxCount"></span></a>
     </nav>
@@ -1594,8 +1603,6 @@ async function viewOverview(app) {
   const [st, sites] = await Promise.all([api('/stats'), api('/sites')]);
   const t = st.totals;
   const maxPipe = Math.max(...st.pipeline.map(p => p.count), 1);
-  const sectors = st.sectors.filter(s => s.leads).sort((a, b) => (b.conversion ?? -1) - (a.conversion ?? -1));
-  const maxSectorLeads = Math.max(...sectors.map(s => s.leads), 1);
   const pipeColor = { 'Contacted': '#8a9095', 'In discussion': css('--warn-600'), 'Feasibility study': '#e0a63a', 'Contract signed': css('--ok-600'), 'Declined': css('--bad-600') };
 
   app.innerHTML = `
@@ -1616,37 +1623,127 @@ async function viewOverview(app) {
         <div class="legend"><span><i style="background:${css('--ok-600')}"></i>Partnership</span><span><i style="background:${css('--ft-orange')}"></i>In progress</span><span><i style="background:#b4b8bb"></i>No partnership yet</span></div></div>
       <div id="gmap" class="map tall"></div>
     </div>
-    <div class="grid" style="align-content:start">
-      <div class="card"><div class="card-head"><h2>Partnership pipeline</h2><a href="#/pipeline">Open →</a></div>
-        <div class="card-pad funnel">${st.pipeline.map(p => `<div class="hbar"><span>${esc(p.status)}</span><div class="track"><i style="width:${p.count / maxPipe * 100}%;background:${pipeColor[p.status]}"></i></div><span class="v">${p.count}</span></div>`).join('')}</div></div>
-      <div class="card"><div class="card-head"><h2>Recent activity</h2></div>
-        <ul class="feed">${st.activity.slice(0, 7).map(a => `<li><span><a href="#/site/${a.siteId}">${esc(a.siteName)}</a><br><span class="muted">${esc(a.text)}</span></span><span class="muted" style="white-space:nowrap">${ago(a.at)}</span></li>`).join('') || '<li class="muted">No activity yet</li>'}</ul></div>
+    <div class="card find-panel">
+      <div class="card-head"><h2 id="findTitle">Best matches</h2></div>
+      <div class="card-pad">
+        <div id="findControls"></div>
+        <div id="findSummary" class="muted find-summary"></div>
+        <div id="findList" class="match-list"></div>
+      </div>
     </div>
   </div>
+  <div class="grid two" style="margin-top:12px">
+    <div class="card"><div class="card-head"><h2>Partnership pipeline</h2><a href="#/pipeline">Open →</a></div>
+      <div class="card-pad funnel">${st.pipeline.map(p => `<div class="hbar"><span>${esc(p.status)}</span><div class="track"><i style="width:${p.count / maxPipe * 100}%;background:${pipeColor[p.status]}"></i></div><span class="v">${p.count}</span></div>`).join('')}</div></div>
+    <div class="card"><div class="card-head"><h2>Recent activity</h2></div>
+      <ul class="feed">${st.activity.slice(0, 7).map(a => `<li><span><a href="#/site/${a.siteId}">${esc(a.siteName)}</a><br><span class="muted">${esc(a.text)}</span></span><span class="muted" style="white-space:nowrap">${ago(a.at)}</span></li>`).join('') || '<li class="muted">No activity yet</li>'}</ul></div>
+  </div>
 
-  <h3 class="section-title" style="margin-top:28px">Partnership patterns</h3>
-  <div class="grid halves">
-    <div class="card"><div class="card-head"><h2>Which sectors sign?</h2><span class="muted" style="font-size:12px">Bar = leads · dark = signed</span></div>
-      <div class="card-pad">${sectors.map(s => `<div class="hbar" title="${s.signed} signed of ${s.leads} leads"><span>${esc(s.label)}</span>
-        <div class="track"><i style="width:${s.signed / maxSectorLeads * 100}%;background:${css('--ok-600')}"></i><i style="width:${(s.leads - s.signed) / maxSectorLeads * 100}%;background:${css('--brand-100')}"></i></div>
-        <span class="v">${pct(s.conversion)} win</span></div>`).join('')}</div></div>
-    <div class="card"><div class="card-head"><h2>Win rate by distance</h2><span class="muted" style="font-size:12px">Signed ÷ (signed + declined)</span></div>
-      <div class="card-pad">${st.distanceBands.map(b => `<div class="hbar"><span>${b.label}<br><span class="muted" style="font-size:12px">${b.leads} leads</span></span><div class="track"><i style="width:${(b.conversion || 0) * 100}%;background:${css('--ft-orange')}"></i></div><span class="v">${pct(b.conversion)}</span></div>`).join('')}
-      <p class="muted" style="font-size:12.5px;margin:14px 0 0">Shorter pipe runs win more often: lower capex and faster payback.</p></div></div>
-    <div class="card"><div class="card-head"><h2>Coverage by country</h2></div>
-      <div class="table-wrap" style="max-height:360px"><table><thead><tr><th>Country</th><th class="r">Cremators</th><th class="r">Signed</th><th class="r">Active</th></tr></thead>
-      <tbody>${st.countries.slice(0, 14).map(c => `<tr><td>${esc(c.name)}</td><td class="r num">${c.units}</td><td class="r num">${c.partnerships}</td><td class="r num">${c.inProgress}</td></tr>`).join('')}</tbody></table></div></div>
-  </div>`;
+  `;
 
   const map = baseMap($('#gmap')).setView([51.5, 6], 4);
   const col = { partnership: css('--ok-600'), progress: css('--ft-orange'), none: '#b4b8bb' };
   const order = { none: 0, progress: 1, partnership: 2 };
+  const statusText = { none: 'No partnership yet', progress: 'In progress', partnership: 'Partnership' };
+  const markers = {};
   sites.slice().sort((a, b) => order[a.status] - order[b.status]).forEach(s => {
-    L.circleMarker([s.lat, s.lon], { radius: s.status === 'none' ? 4 : 6, color: '#fff', weight: 1, fillColor: col[s.status], fillOpacity: .9 })
+    markers[s.id] = L.circleMarker([s.lat, s.lon], { radius: s.status === 'none' ? 4 : 6, color: '#fff', weight: 1, fillColor: col[s.status], fillOpacity: .9 })
+      .bindTooltip(`<b>${esc(s.name)}</b><br>${esc(s.city)}, ${esc(s.countryName)}<br>${s.units} × ${esc(s.model)} · ${n0(s.supplyMWh)} MWh/yr<br><span class="muted">${statusText[s.status]} · ${s.leads} leads</span>`, { direction: 'top', sticky: true })
       .bindPopup(`<h4>${esc(s.name)}</h4><div class="muted">${esc(s.city)}, ${esc(s.countryName)}</div>
         <div style="margin:8px 0">${s.units} × ${esc(s.model)} · ${n0(s.supplyMWh)} MWh/yr surplus<br>${s.leads} leads · ${s.signed} signed</div>
-        <a class="btn sm primary" href="#/site/${s.id}">Open matching →</a>`).addTo(map);
+        <a class="btn sm primary" href="#/site/${s.id}">Open matching →</a>`)
+      .addTo(map);
   });
+
+  // Search tab beside the map. It lists the best businesses (heat users) that could take heat
+  // from the matching cremators, ranked by their match score from the installation's matching page.
+  const find = { mode: 'region', q: '', model: '' };
+  const modelOpts = [...new Set(sites.map(s => s.model))].sort();
+  const TOP_SITES = 6;   // installations searched for businesses
+  const TOP = 8;         // businesses shown
+  const RADIUS = 10;     // km, same default as the installation page
+  const usersCache = new Map();
+  const usersFor = id => {
+    if (!usersCache.has(id)) usersCache.set(id, api(`/sites/${id}/matches?radius=${RADIUS}`).then(r => r.users.map(u => ({ ...u, from: r.site }))));
+    return usersCache.get(id);
+  };
+  // Installations matching the search, largest surplus first. With no search, that is the default view.
+  const sitesFor = () => {
+    const q = find.q.trim().toLowerCase();
+    const hits = find.mode === 'region'
+      ? sites.filter(s => !q || [s.countryName, s.country, s.city, s.name].some(v => String(v).toLowerCase().includes(q)))
+      : sites.filter(s => (!find.model || s.model === find.model) && (!q || [s.id, s.name, s.city, s.model].some(v => String(v).toLowerCase().includes(q))));
+    return hits.slice().sort((a, b) => b.supplyMWh - a.supplyMWh);
+  };
+  function drawFindControls() {
+    $('#findControls').innerHTML = `
+      <div class="seg" id="findMode"><button data-m="region" class="${find.mode === 'region' ? 'on' : ''}">Region</button><button data-m="cremator" class="${find.mode === 'cremator' ? 'on' : ''}">Cremator</button></div>
+      <div class="search-row">
+        <input type="text" id="findQ" value="${esc(find.q)}" placeholder="${find.mode === 'region' ? 'Country or city (e.g. Netherlands, Stockholm)' : 'Model or site name (e.g. FT Classic)'}">
+        ${find.mode === 'cremator' ? `<select id="findModel"><option value="">All models</option>${modelOpts.map(m => `<option value="${esc(m)}" ${find.model === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>` : ''}
+      </div>`;
+    $$('#findMode button').forEach(b => b.onclick = () => { find.mode = b.dataset.m; find.model = ''; find.q = ''; drawFindControls(); drawFindResults(); });
+    $('#findQ').oninput = e => { find.q = e.target.value; drawFindResults(); };
+    if ($('#findModel')) $('#findModel').onchange = e => { find.model = e.target.value; drawFindResults(); };
+  }
+  let findRun = 0;
+  async function drawFindResults() {
+    const run = ++findRun; // ignore responses from an older search
+    const active = !!(find.q.trim() || find.model);
+    const pool = sitesFor();
+    const src = pool.slice(0, TOP_SITES);
+    const srcIds = new Set(src.map(s => s.id));
+    sites.forEach(s => {
+      const hit = srcIds.has(s.id);
+      markers[s.id].setStyle({ radius: hit ? 8 : (s.status === 'none' ? 4 : 6), color: hit ? '#151515' : '#fff', weight: hit ? 2 : 1, fillOpacity: hit || !active ? .9 : .25 });
+    });
+    if (active && src.length) map.fitBounds(L.latLngBounds(src.map(s => [s.lat, s.lon])).pad(0.2), { maxZoom: 9, animate: false });
+    $('#findTitle').textContent = active ? 'Best businesses for this search' : 'Best businesses to take heat';
+    $('#findSummary').innerHTML = `Heat users within ${RADIUS} km of ${src.length} of ${pool.length} installation${pool.length === 1 ? '' : 's'}${active ? '' : ', largest surplus first'}.`
+      + (pool.length > TOP_SITES ? ` <a href="#/installations">All installations →</a>` : '');
+    $('#findList').innerHTML = '<div class="empty">Finding businesses…</div>';
+    let lists;
+    try { lists = await Promise.all(src.map(s => usersFor(s.id))); }
+    catch (e) { if (run === findRun) $('#findList').innerHTML = `<div class="empty">Could not load businesses: ${esc(e.message)}</div>`; return; }
+    if (run !== findRun) return;
+    const users = lists.flat().sort((a, b) => b.score.total - a.score.total).slice(0, TOP);
+    $('#findList').innerHTML = users.map(u => `<a class="match-item" href="#/site/${esc(u.from.id)}">
+        <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">
+          <div style="min-width:0">
+            <div class="t">${esc(u.name)}</div>
+            <div class="m">${esc(u.sectorLabel)} · ${n1(u.distanceKm)} km · ${n0(u.annualDemandMWh)} MWh/yr</div>
+            <div class="m">Heat from ${esc(u.from.name)}, ${esc(u.from.city)}</div>
+          </div>
+          <div title="Match score (0–100): energy match, contract likelihood and feasibility" style="min-width:96px">${scoreBar(u.score.total)}</div>
+        </div></a>`).join('')
+      || '<div class="empty">No businesses within 10 km of these installations. Try another search.</div>';
+  }
+  drawFindControls();
+  drawFindResults();
+}
+
+// ======================= MATCHING PATTERNS =======================
+async function viewMatching(app) {
+  const st = await api('/stats');
+  const sectors = st.sectors.filter(s => s.leads).sort((a, b) => (b.conversion ?? -1) - (a.conversion ?? -1));
+  const maxSectorLeads = Math.max(...sectors.map(s => s.leads), 1);
+  app.innerHTML = `
+  <div class="page-head">
+    <div><h1>Matching patterns</h1><p>Which heat users sign, and how distance affects the outcome, from the partnership pipeline.</p></div>
+    <a class="btn" href="#/overview">← Global overview</a>
+  </div>
+  <div class="grid two">
+    <div class="card"><div class="card-head"><h2>Which sectors sign?</h2><span class="muted" style="font-size:12px">Bar = leads · dark = signed</span></div>
+      <div class="card-pad">${sectors.map(s => `<div class="hbar" title="${s.signed} signed of ${s.leads} leads"><span>${esc(s.label)}</span>
+        <div class="track"><i style="width:${s.signed / maxSectorLeads * 100}%;background:${css('--ok-600')}"></i><i style="width:${(s.leads - s.signed) / maxSectorLeads * 100}%;background:${css('--brand-100')}"></i></div>
+        <span class="v">${pct(s.conversion)} win</span></div>`).join('') || '<p class="muted">No leads yet.</p>'}</div></div>
+    <div class="card"><div class="card-head"><h2>Win rate by distance</h2><span class="muted" style="font-size:12px">Signed ÷ (signed + declined)</span></div>
+      <div class="card-pad">${st.distanceBands.map(b => `<div class="hbar"><span>${b.label}<br><span class="muted" style="font-size:12px">${b.leads} leads</span></span><div class="track"><i style="width:${(b.conversion || 0) * 100}%;background:${css('--ft-orange')}"></i></div><span class="v">${pct(b.conversion)}</span></div>`).join('')}
+      <p class="muted" style="font-size:12.5px;margin:14px 0 0">Shorter pipe runs win more often: lower capex and faster payback.</p></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><div class="card-head"><h2>Detail by sector</h2></div>
+    <div class="table-wrap"><table><thead><tr><th>Sector</th><th class="r">Leads</th><th class="r">Signed</th><th class="r">Declined</th><th class="r">Win rate</th><th class="r">Avg signed distance</th></tr></thead>
+    <tbody>${sectors.map(s => `<tr><td>${esc(s.label)}</td><td class="r num">${s.leads}</td><td class="r num">${s.signed}</td><td class="r num">${s.declined}</td><td class="r num">${pct(s.conversion)}</td><td class="r num">${s.avgDist == null ? '—' : n1(s.avgDist) + ' km'}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">No leads yet.</td></tr>'}</tbody></table></div></div>`;
 }
 
 // ======================= INSTALLATIONS =======================
@@ -2146,6 +2243,7 @@ async function route() {
     else if (page === 'site' && arg) await viewSite(app, arg);
     else if (page === 'pipeline') await viewPipeline(app);
     else if (page === 'outbox') await viewOutbox(app);
+    else if (page === 'matching') await viewMatching(app);
     else await viewOverview(app);
     window.scrollTo(0, 0);
   } catch (e) { if (e.auth) return; app.innerHTML = `<div class="empty">Something went wrong: ${esc(e.message)}<br><a href="#/overview">Back to overview</a></div>`; console.error(e); }
