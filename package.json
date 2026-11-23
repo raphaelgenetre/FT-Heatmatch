@@ -1,0 +1,10 @@
+{
+  "name": "ft-heatmatch",
+  "version": "1.0.0",
+  "description": "HeatMatch MVP: match surplus cremator heat with nearby heat users (demo data).",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED",
+  "private": true
+}
