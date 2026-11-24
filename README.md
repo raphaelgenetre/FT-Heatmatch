@@ -3,6 +3,10 @@
 A heat-matching platform that helps FT find businesses near its cremators that could buy their surplus heat.
 All installations, companies, contacts and numbers are **fictional demo data**.
 
+## Live app
+
+**https://raphaelgenetre.github.io/FT-Heatmatch/** (published with GitHub Pages from `main`; every merge to `main` updates it).
+
 ## Sign in
 
 Use any **@alumni.esade.edu** email address with the shared password (ask the team). Change the rule in `lib/auth.js`.
