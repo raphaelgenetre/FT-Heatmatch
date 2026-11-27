@@ -8,11 +8,11 @@ js = lambda t: t.replace('</script', '<\\/script')
 data_js = rd('lib/data.js')
 auth_js = rd('lib/auth.js')
 srv = rd('server.js')
-core = srv[srv.index('const STATUSES'):srv.index('http.createServer')]
+core = srv[srv.index('const STATUSES'):srv.index('// ---------------- security (server only)')]
 core = core.replace("const BASE_SITES = D.generateSites();", "const BASE_SITES = D.generateSites();")
 # swap file persistence for localStorage
 core = re.sub(r"function save\(\) \{.*?\n", "function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }\n", core, count=1)
-core = re.sub(r"function load\(\) \{.*?\n\}\n", "function load() { try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!state || !state.leads) seed(); }\n", core, count=1, flags=re.S)
+core = re.sub(r"function load\(\) \{.*?\n\}\n", "function load() { try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!state || state.version !== STATE_VERSION) seed(); }\n", core, count=1, flags=re.S)
 core = re.sub(r"function send\(res.*?\n", "function send(res, code, obj) { res.code = code; res.data = obj; }\n", core, count=1)
 core = re.sub(r"function body\(req\).*?\n", "function body(req) { return Promise.resolve(req.body || {}); }\n", core, count=1)
 core = re.sub(r"const MIME = .*?\n", "", core, count=1)
@@ -21,7 +21,7 @@ bundle = f"""(function(){{
 const module = {{ exports: {{}} }};
 (function(module){{ {data_js} }})(module);
 const D = module.exports;
-const KEY = 'ft-heatmatch-state-v1';
+const KEY = 'ft-heatmatch-state-v2';
 {core}
 // ---- authentication (browser-only demo gate; sessionStorage = signed out when the tab is closed) ----
 const AUTHMOD = {{ exports: {{}} }};
@@ -38,7 +38,7 @@ window.LOCAL_API = async function(path, method, payload) {{
   if (path === '/session') return {{ code: 200, data: {{ email: who }} }};
   const url = new URL('/api' + path, 'http://local');
   const res = {{ code: 200, data: null }};
-  await api({{ method, body: payload }}, res, url);
+  await api({{ method, body: payload, user: who }}, res, url);
   return res;
 }};
 }})();"""
