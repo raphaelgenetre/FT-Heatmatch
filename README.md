@@ -9,7 +9,7 @@ All installations, companies, contacts and numbers are **fictional demo data**.
 
 ## Sign in
 
-Use any **@alumni.esade.edu** email address with the shared password (ask the team). Change the rule in `lib/auth.js`.
+Use any **@alumni.esade.edu** email address with the shared password (ask the team). The password is stored only as a hash in `lib/auth.js`; to change it, run `node tools/set-password.js "NewPassword"` and paste the result into `passwordHash`.
 You stay signed in when you reload the page, and you're signed out when you close the tab or window.
 In `HeatMatch.html` the check runs in the browser, so it keeps casual visitors out but is not real security. The server version (`node server.js`) checks it on the server.
 
@@ -43,7 +43,7 @@ Stop it with `Ctrl + C`.
 ## Demo data
 
 - 1,000 FT cremators at 588 sites in 38 countries (~94% in Europe)
-- 22–42 dummy heat users per site (greenhouses, pools, hospitals, schools, district heating and more)
+- 22–42 dummy heat users per site, within about 1.4 km (greenhouses, pools, hospitals, schools, district heating and more)
 - About 250 seeded partnership leads so the global map and pattern charts have content
 
 Changes are saved to `data/state.json`. To start fresh, click **Reset demo** at the bottom of the sidebar.
@@ -59,8 +59,17 @@ Every colour lives in `public/theme.css`. Edit the hex codes there and refresh t
 
 - **Energy match:** how well the cremator's annual surplus matches the company's demand, and how much their demand overlaps cremator operating hours.
 - **Contract likelihood:** sector base rate, plus bonuses for public sector (public support), sustainability commitments, an ageing boiler and fossil heating.
-- **Feasibility and cost:** temperature headroom, pipe length (€450/m plus a €65k substation) and payback against €55/MWh heat.
-- CO₂: 0.202 t per MWh of gas heat replaced.
+- **Feasibility and cost:** temperature headroom, pipe length (€900/m plus a €65k substation) and payback against €65/MWh heat.
+- **Search radius:** 500 m recommended, 1 km maximum (beyond that the pipe rarely pays back).
+- **Environmental impact:** heat ÷ 0.9 (gas boiler efficiency) × 0.202 t CO₂ per MWh of gas; shown as CO₂, homes heated, cars off the road, m³ gas and € saved. See docs/ARCHITECTURE.md.
+
+## Tests
+
+Run `npm test`: 10 automated checks of the back end (sign-in rules, security headers, 1 km radius cap, audit trail, input limits, brute-force lock).
+
+## How it works
+
+See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the back end, the matching model, security and what production with FT would look like.
 
 ## Working as a team
 

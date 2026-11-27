@@ -1,24 +1,34 @@
-// HeatMatch MVP — zero-dependency Node.js server.
+// HeatMatch MVP: zero-dependency Node.js server.
 // Run:  node server.js   then open http://localhost:3000
+//
+// Settings (environment variables, all optional):
+//   PORT               port to listen on (default 3000)
+//   HM_STATE_FILE      where data is saved (default data/state.json)
+//   HM_PASSWORD_HASH   password hash from tools/set-password.js (default: the one in lib/auth.js)
+//   HM_SECURE_COOKIE=1 mark the session cookie "Secure" (set this when served over HTTPS)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const D = require('./lib/data');
 const crypto = require('crypto');
-const { checkLogin } = require('./lib/auth');
+const { checkLogin, AUTH } = require('./lib/auth');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC = path.join(__dirname, 'public');
-const STATE_FILE = path.join(__dirname, 'data', 'state.json');
+const STATE_FILE = process.env.HM_STATE_FILE || path.join(__dirname, 'data', 'state.json');
+const PASSWORD_HASH = process.env.HM_PASSWORD_HASH || AUTH.passwordHash;
 const STATUSES = ['Contacted', 'In discussion', 'Feasibility study', 'Contract signed', 'Declined'];
 const ACTIVE = new Set(['Contacted', 'In discussion', 'Feasibility study']);
+const STATE_VERSION = 3; // bump when the data model changes: old saved data is then re-seeded
 
 const BASE_SITES = D.generateSites();
 const BASE_BY_ID = new Map(BASE_SITES.map(s => [s.id, s]));
 
 // ---------------- state ----------------
 let state;
-function save() { fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true }); fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 1)); }
+// Crash-safe save: write to a temporary file, then rename it over the old one (a rename is atomic),
+// so a crash mid-write can never leave a half-written, corrupted data file.
+function save() { fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true }); const tmp = STATE_FILE + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(state, null, 1)); fs.renameSync(tmp, STATE_FILE); }
 function site(id) { const b = BASE_BY_ID.get(id); return b ? { ...b, ...(state.siteOverrides[id] || {}) } : null; }
 function allSites() { return BASE_SITES.map(s => site(s.id)); }
 function userById(siteObj, uid) { return D.heatUsersFor(siteObj).find(u => u.id === uid); }
@@ -27,7 +37,7 @@ const DEFAULT_TEMPLATE = {
   subject: 'Low-carbon heat available near {{company}}',
   body: `Dear {{contact_name}},
 
-I am writing on behalf of {{sender}}, the heat-recovery team at FT. {{site_name}} in {{city}}, about {{distance}} km from {{company}}, produces surplus heat of up to {{supply_temp}}°C that is currently released to the atmosphere.
+I am writing on behalf of {{sender}}, the heat-recovery team at FT. {{site_name}} in {{city}}, about {{distance}} from {{company}}, produces surplus heat of up to {{supply_temp}}°C that is currently released to the atmosphere.
 
 Our initial assessment suggests we could supply roughly {{delivered_mwh}} MWh of heat per year to your site. That could save around €{{savings}} a year and avoid an estimated {{co2}} tonnes of CO₂ annually, with an indicative payback of {{payback}} years.
 
@@ -39,11 +49,11 @@ Kind regards,
 
 function seed() {
   const r = D.rng(42);
-  state = { siteOverrides: {}, leads: [], outbox: [], activity: [], template: DEFAULT_TEMPLATE, seq: 1 };
+  state = { version: STATE_VERSION, siteOverrides: {}, leads: [], outbox: [], activity: [], template: DEFAULT_TEMPLATE, seq: 1 };
   const now = Date.now();
   const candidates = BASE_SITES.filter(() => r() < 0.2);
   for (const s of candidates) {
-    const matches = D.heatUsersFor(s).filter(u => u.distanceKm <= 15)
+    const matches = D.heatUsersFor(s).filter(u => u.distanceKm <= D.ECON.maxRadiusKm)
       .map(u => ({ u, sc: D.scoreUser(s, u) })).sort((a, b) => b.sc.total - a.sc.total);
     const n = D.ibetween(r, 1, 3);
     for (const { u, sc } of matches.slice(0, n)) {
@@ -68,7 +78,8 @@ function makeLead(s, u, sc, status, createdAt, updatedAt) {
   };
 }
 function load() {
-  try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch { seed(); }
+  try { state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch { state = null; }
+  if (!state || state.version !== STATE_VERSION) seed();
 }
 load();
 
@@ -107,10 +118,10 @@ function stats() {
     if (l.status === 'Declined') s.declined++;
   }
   const sectorList = Object.values(sectors).map(s => ({ ...s, conversion: s.signed + s.declined ? s.signed / (s.signed + s.declined) : null, avgDist: s.signed ? s.distSum / s.signed : null }));
-  const bands = [[0, 2], [2, 5], [5, 10], [10, 20], [20, 99]].map(([a, b]) => {
+  const bands = [[0, 0.25], [0.25, 0.5], [0.5, 0.75], [0.75, 1.01]].map(([a, b]) => {
     const ls = state.leads.filter(l => l.distanceKm >= a && l.distanceKm < b);
     const sg = ls.filter(l => l.status === 'Contract signed').length, dc = ls.filter(l => l.status === 'Declined').length;
-    return { label: b === 99 ? `${a}+ km` : `${a}–${b} km`, leads: ls.length, signed: sg, conversion: sg + dc ? sg / (sg + dc) : null };
+    return { label: `${Math.round(a * 1000)}–${Math.round(Math.min(b, 1) * 1000)} m`, leads: ls.length, signed: sg, conversion: sg + dc ? sg / (sg + dc) : null };
   });
   const pipeline = STATUSES.map(s => ({ status: s, count: state.leads.filter(l => l.status === s).length }));
   const statusCount = { partnership: 0, progress: 0, none: 0 };
@@ -127,6 +138,12 @@ function stats() {
       activeLeads: state.leads.filter(l => ACTIVE.has(l.status)).length,
       emailsSent: state.outbox.length,
     },
+    // Environmental impact: today (signed), if the active pipeline signs, and the full potential of FT's network
+    impact: {
+      signed: D.impact(signed.reduce((a, l) => a + l.deliveredMWh, 0)),
+      pipeline: D.impact(state.leads.filter(l => ACTIVE.has(l.status)).reduce((a, l) => a + l.deliveredMWh, 0)),
+      potential: D.impact(sites.reduce((a, s) => a + D.annualSupplyMWh(s), 0)),
+    },
     countries: Object.values(countries).sort((a, b) => b.units - a.units),
     sectors: sectorList, distanceBands: bands, pipeline, activity: state.activity.slice(0, 12),
   };
@@ -134,7 +151,7 @@ function stats() {
 
 // ---------------- routing ----------------
 function send(res, code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); }
-function body(req) { return new Promise((ok, bad) => { let d = ''; req.on('data', c => (d += c)); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { bad(e); } }); }); }
+function body(req) { return new Promise((ok, bad) => { let d = '', size = 0; req.on('data', c => { size += c.length; if (size <= 100 * 1024) d += c; }); req.on('end', () => { if (size > 100 * 1024) return bad(Object.assign(new Error('Request too large'), { status: 413 })); try { ok(d ? JSON.parse(d) : {}); } catch (e) { bad(Object.assign(new Error('Invalid JSON'), { status: 400 })); } }); }); } // max 100 KB
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
 
 async function api(req, res, url) {
@@ -169,12 +186,13 @@ async function api(req, res, url) {
       if (b.contact && typeof b.contact === 'object') o.contact = { ...s.contact, ...b.contact };
       o.dataUpdatedAt = Date.now();
       state.siteOverrides[s.id] = o;
-      state.activity.unshift({ at: Date.now(), text: `Operating data updated`, siteId: s.id, siteName: s.name });
+      state.activity.unshift({ at: Date.now(), text: `Operating data updated`, siteId: s.id, siteName: s.name, by: req.user || null });
       save();
       return send(res, 200, { ...site(s.id), supplyMWh: D.annualSupplyMWh(site(s.id)) });
     }
     if (p[2] === 'matches' && m === 'GET') {
-      const radius = Math.min(50, Math.max(0.5, +(url.searchParams.get('radius') || 10)));
+      // radius is capped at 1 km (beyond that pipes cost more than the heat is worth); 500 m is the default
+      const radius = Math.min(D.ECON.maxRadiusKm, Math.max(0.1, +(url.searchParams.get('radius') || D.ECON.optimumRadiusKm)));
       const w = weightsFrom(url.searchParams);
       const leadByUser = new Map(state.leads.filter(l => l.siteId === s.id).map(l => [l.userId, l]));
       const users = D.heatUsersFor(s).filter(u => u.distanceKm <= radius)
@@ -189,23 +207,25 @@ async function api(req, res, url) {
     const s = site(b.siteId);
     if (!s) return send(res, 404, { error: 'Installation not found' });
     if (!Array.isArray(b.userIds) || !b.userIds.length) return send(res, 400, { error: 'Select at least one company' });
+    if (b.userIds.length > 50) return send(res, 400, { error: 'You can email at most 50 companies at once' });
+    if (String(b.subject || '').length > 200 || String(b.body || '').length > 5000) return send(res, 400, { error: 'The email subject or text is too long' });
     const subjectT = String(b.subject || state.template.subject), bodyT = String(b.body || state.template.body);
     if (b.saveTemplate) state.template = { subject: subjectT, body: bodyT };
     const sent = [];
     for (const uid of b.userIds) {
       const u = userById(s, uid); if (!u) continue;
       const sc = D.scoreUser(s, u, b.weights || D.DEFAULT_WEIGHTS);
-      const vars = { company: u.name, contact_name: u.contact.name, site_name: s.name, city: s.city, distance: u.distanceKm.toFixed(1), supply_temp: s.supplyTempC,
+      const vars = { company: u.name, contact_name: u.contact.name, site_name: s.name, city: s.city, distance: u.distanceKm < 1 ? `${Math.round(u.distanceKm * 1000 / 10) * 10} m` : `${u.distanceKm.toFixed(1)} km`, supply_temp: s.supplyTempC,
         delivered_mwh: fmt(sc.deliveredMWh), savings: fmt(sc.annualSavings), co2: fmt(sc.co2Tonnes), payback: sc.paybackYears, sender: b.sender || 'FT Heat Partnerships' };
       const now = Date.now();
       let lead = state.leads.find(l => l.siteId === s.id && l.userId === u.id);
-      if (lead) { lead.status = 'Contacted'; lead.updatedAt = now; lead.history.push({ at: now, status: 'Contacted', note: 'Follow-up email sent' }); }
+      if (lead) { lead.status = 'Contacted'; lead.updatedAt = now; lead.history.push({ at: now, status: 'Contacted', note: 'Follow-up email sent', by: req.user || null }); }
       else { lead = makeLead(s, u, sc, 'Contacted', now, now); state.leads.push(lead); }
-      const mail = { id: `M-${String(state.outbox.length + 1).padStart(5, '0')}`, at: now, to: `${u.contact.name} <${u.contact.email}>`, company: u.name,
+      const mail = { id: `M-${String(state.outbox.length + 1).padStart(5, '0')}`, at: now, by: req.user || null, to: `${u.contact.name} <${u.contact.email}>`, company: u.name,
         siteId: s.id, siteName: s.name, leadId: lead.id, subject: fill(subjectT, vars), body: fill(bodyT, vars) };
       state.outbox.unshift(mail); sent.push(mail);
     }
-    state.activity.unshift({ at: Date.now(), text: `${sent.length} outreach email${sent.length === 1 ? '' : 's'} sent`, siteId: s.id, siteName: s.name });
+    state.activity.unshift({ at: Date.now(), text: `${sent.length} outreach email${sent.length === 1 ? '' : 's'} sent`, siteId: s.id, siteName: s.name, by: req.user || null });
     save();
     return send(res, 200, { sent });
   }
@@ -220,9 +240,10 @@ async function api(req, res, url) {
     const b = await body(req);
     if (b.status && !STATUSES.includes(b.status)) return send(res, 400, { error: 'Unknown status' });
     const now = Date.now();
-    if (b.status && b.status !== l.status) { l.status = b.status; state.activity.unshift({ at: now, text: `${l.userName} → ${b.status}`, siteId: l.siteId, siteName: l.siteName }); }
+    if (b.status && b.status !== l.status) { l.status = b.status; state.activity.unshift({ at: now, text: `${l.userName} → ${b.status}`, siteId: l.siteId, siteName: l.siteName, by: req.user || null }); }
     l.updatedAt = now;
-    l.history.push({ at: now, status: l.status, note: String(b.note || '').slice(0, 500) });
+    l.history.push({ at: now, status: l.status, note: String(b.note || '').slice(0, 500), by: req.user || null });
+    state.activity = state.activity.slice(0, 500); // keep the activity log bounded
     save();
     return send(res, 200, l);
   }
@@ -231,30 +252,70 @@ async function api(req, res, url) {
   return send(res, 404, { error: 'Not found' });
 }
 
-const SESSIONS = new Map(); // token -> email (in memory; restart = sign in again)
+// ---------------- security (server only) ----------------
+// Sessions: random 48-character token in an HttpOnly cookie -> who is signed in. They expire after
+// 8 hours of inactivity (or 12 hours in total), and are kept in memory, so a restart signs everyone out.
+const SESSIONS = new Map(); // token -> { email, created, last }
+const IDLE_MS = 8 * 3600e3, MAX_MS = 12 * 3600e3;
+function getSession(token) {
+  const s = token && SESSIONS.get(token);
+  if (!s) return null;
+  const now = Date.now();
+  if (now - s.last > IDLE_MS || now - s.created > MAX_MS) { SESSIONS.delete(token); return null; }
+  s.last = now;
+  return s;
+}
+// Brute-force protection: max 5 wrong sign-ins per IP address per 15 minutes.
+const FAILS = new Map(); // ip -> { count, first }
+const FAIL_LIMIT = 5, FAIL_WINDOW = 15 * 60e3;
+function tooManyFails(ip) { const f = FAILS.get(ip); if (!f) return 0; if (Date.now() - f.first > FAIL_WINDOW) { FAILS.delete(ip); return 0; } return f.count >= FAIL_LIMIT ? Math.ceil((f.first + FAIL_WINDOW - Date.now()) / 60e3) : 0; }
+function recordFail(ip) { const f = FAILS.get(ip); if (!f || Date.now() - f.first > FAIL_WINDOW) FAILS.set(ip, { count: 1, first: Date.now() }); else f.count++; }
+setInterval(() => { for (const [t] of SESSIONS) getSession(t); for (const [ip] of FAILS) tooManyFails(ip); }, 10 * 60e3).unref();
+
+// Security headers sent with every response.
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',          // browsers must not guess file types
+  'X-Frame-Options': 'DENY',                    // the app can't be embedded in another site (click-jacking)
+  'Referrer-Policy': 'no-referrer',             // don't leak our URLs to other sites
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  // Only load code from our own server; map images only from Esri.
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+};
+const STARTED = Date.now();
+const SECURE = process.env.HM_SECURE_COOKIE === '1';
+const cookie = (v, maxAge) => `hm_session=${v}; HttpOnly; SameSite=Strict; Path=/${SECURE ? '; Secure' : ''}${maxAge !== undefined ? `; Max-Age=${maxAge}` : ''}`;
+
 http.createServer(async (req, res) => {
+  const t0 = Date.now();
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+  res.on('finish', () => { if (req.url.startsWith('/api/')) console.log(`${new Date().toISOString()} ${req.method} ${req.url.split('?')[0]} ${res.statusCode} ${Date.now() - t0}ms${req.user ? ' ' + req.user : ''}`); });
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
     if (url.pathname.startsWith('/api/')) {
-      // ---- authentication (server-side) ----
+      const ip = req.socket.remoteAddress || 'unknown';
       const token = (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(([k]) => k === 'hm_session')?.[1];
-      const email = token && SESSIONS.get(token);
+      const session = getSession(token);
+      if (url.pathname === '/api/health') return send(res, 200, { ok: true, uptimeSeconds: Math.round((Date.now() - STARTED) / 1000), installations: BASE_SITES.length, leads: state.leads.length });
       if (url.pathname === '/api/login' && req.method === 'POST') {
+        const wait = tooManyFails(ip);
+        if (wait) return send(res, 429, { error: `Too many attempts. Try again in ${wait} minute${wait > 1 ? 's' : ''}.` });
         const b = await body(req);
-        const r = checkLogin(b.email, b.password);
-        if (!r.ok) return send(res, 401, { error: r.error });
+        const r = checkLogin(b.email, b.password, PASSWORD_HASH);
+        if (!r.ok) { recordFail(ip); return send(res, 401, { error: r.error }); }
+        FAILS.delete(ip);
         const t = crypto.randomBytes(24).toString('hex');
-        SESSIONS.set(t, r.email);
-        res.setHeader('Set-Cookie', `hm_session=${t}; HttpOnly; SameSite=Lax; Path=/`); // session cookie: no expiry date
+        SESSIONS.set(t, { email: r.email, created: Date.now(), last: Date.now() });
+        res.setHeader('Set-Cookie', cookie(t)); // session cookie: the browser drops it when it closes
         return send(res, 200, { email: r.email });
       }
       if (url.pathname === '/api/logout' && req.method === 'POST') {
         if (token) SESSIONS.delete(token);
-        res.setHeader('Set-Cookie', 'hm_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
+        res.setHeader('Set-Cookie', cookie('', 0));
         return send(res, 200, { ok: true });
       }
-      if (!email) return send(res, 401, { error: 'Please sign in', auth: true });
-      if (url.pathname === '/api/session') return send(res, 200, { email });
+      if (!session) return send(res, 401, { error: 'Please sign in', auth: true });
+      req.user = session.email;
+      if (url.pathname === '/api/session') return send(res, 200, { email: session.email });
       return await api(req, res, url);
     }
     let f = path.normalize(path.join(PUBLIC, decodeURIComponent(url.pathname)));
@@ -263,6 +324,7 @@ http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
     fs.createReadStream(f).pipe(res);
   } catch (e) {
+    if (e.status) return send(res, e.status, { error: e.message });
     console.error(e); send(res, 500, { error: 'Server error' });
   }
 }).listen(PORT, () => {

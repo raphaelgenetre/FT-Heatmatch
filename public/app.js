@@ -11,6 +11,18 @@ const eur = v => '€' + (v >= 1e6 ? n1(v / 1e6) + 'M' : v >= 1e3 ? n0(v / 1e3) 
 const pct = v => v == null ? '—' : Math.round(v * 100) + '%';
 const date = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const ago = t => { const d = (Date.now() - t) / 864e5; return d < 1 ? 'today' : d < 2 ? 'yesterday' : d < 31 ? `${Math.floor(d)} days ago` : date(t); };
+// distances: metres under 1 km
+const dist = km => km < 1 ? `${Math.round(km * 1000 / 10) * 10} m` : `${n1(km)} km`;
+// environmental impact of `mwh` of recovered heat (same formula as lib/data.js, constants from the server)
+function impactOf(mwh) {
+  const E = META.econ, gas = mwh / E.boilerEfficiency, co2 = gas * E.co2PerMWh;
+  return { heatMWh: mwh, gasM3: gas * 1000 / E.kWhPerM3Gas, co2Tonnes: co2, homes: mwh / E.homeHeatMWh, cars: co2 / E.carCO2t, savingsEur: mwh * E.heatPrice };
+}
+const big = v => v >= 1e6 ? n1(v / 1e6) + ' million' : n0(v);
+function impactMethod() {
+  const E = META.econ;
+  return `Recovered cremator heat replaces heat from gas boilers. 1 MWh of heat saves ${(1 / E.boilerEfficiency).toFixed(2)} MWh of gas (boiler efficiency ${Math.round(E.boilerEfficiency * 100)}%), and burning gas emits ${E.co2PerMWh} t CO₂ per MWh. A home uses about ${E.homeHeatMWh} MWh of heat a year; a car emits about ${E.carCO2t} t CO₂ a year. Heat valued at €${E.heatPrice}/MWh.`;
+}
 const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '-');
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -125,6 +137,25 @@ async function viewOverview(app) {
     <div class="card kpi"><div class="label">Heat delivered ${tip('Heat supplied each year through signed partnerships, replacing mostly gas heating.')}</div><div class="value">${n1(t.deliveredGWh)}<small>GWh/yr</small></div><div class="sub">${n0(t.co2Tonnes)} t CO₂ avoided per year</div></div>
     <div class="card kpi"><div class="label">Active pipeline ${tip('Deals in progress: contacted, in discussion or in a feasibility study.')}</div><div class="value">${n0(t.activeLeads)}</div><div class="sub">${t.sitesInProgress} sites in progress · ${n0(t.emailsSent)} emails sent</div></div>
   </div>
+  <div class="card impact-card">
+    <div class="card-head"><div><h2>🌱 Environmental impact</h2><div class="muted" style="font-size:12.5px">Gas boilers replaced by recovered cremator heat, per year</div></div>${tip(impactMethod())}</div>
+    <div class="impact-cols">
+      ${[['Today', 'from signed partnerships', st.impact.signed, 'now'],
+         ['If the pipeline signs', 'deals in progress, added on top', st.impact.pipeline, 'next'],
+         ['Full potential', `if all heat from FT's ${n0(t.units)} cremators is used`, st.impact.potential, 'max']].map(([title, sub, im, cls]) => `
+      <div class="impact-col ${cls}">
+        <div class="impact-title">${title}</div><div class="muted" style="font-size:12px">${sub}</div>
+        <div class="impact-big"><b>${big(im.co2Tonnes)}</b> t CO₂ avoided</div>
+        <div class="impact-heat">${n1(im.heatMWh / 1000)} GWh of heat recovered</div>
+        <ul class="impact-eq">
+          <li><span>🏠</span><b>${big(im.homes)}</b> homes heated</li>
+          <li><span>🚗</span><b>${big(im.cars)}</b> cars off the road</li>
+          <li><span>🔥</span><b>${big(im.gasM3)}</b> m³ of gas saved</li>
+          <li><span>💶</span><b>${eur(im.savingsEur)}</b> heating costs saved</li>
+        </ul>
+      </div>`).join('')}
+    </div>
+  </div>
   <div class="grid two">
     <div class="card">
       <div class="card-head"><h2>Global partnership map</h2>
@@ -222,7 +253,7 @@ async function viewInstallations(app) {
 }
 
 // ======================= SITE / MATCHING =======================
-const matchState = { radius: 10, we: 40, wl: 30, wf: 30, preset: 'balanced', sector: '', minScore: 0, hideContacted: false, view: 'map' };
+const matchState = { radius: 0.5, we: 40, wl: 30, wf: 30, preset: 'balanced', sector: '', minScore: 0, hideContacted: false, view: 'map' };
 const PRESETS = {
   balanced:   { label: 'Balanced',            help: 'A mix of everything',               w: [40, 30, 30] },
   demand:     { label: 'Biggest heat users',  help: 'Who can use the most heat',         w: [70, 15, 15] },
@@ -232,7 +263,7 @@ const PRESETS = {
 // Plain-language reasons shown under each company
 function reasons(u, site) {
   const good = [], warn = [];
-  if (u.distanceKm < 2) good.push(`Only ${n1(u.distanceKm)} km away`);
+  if (u.distanceKm <= 0.3) good.push(`Only ${dist(u.distanceKm)} away`);
   if (u.score.paybackYears <= 8) good.push(`Pays back in ${n1(u.score.paybackYears)} yrs`);
   if (u.publicSector) good.push('Public sector');
   if (u.profileFit >= 0.85) good.push('Needs heat when cremators run');
@@ -242,7 +273,7 @@ function reasons(u, site) {
   if (u.annualDemandMWh >= site.supplyMWh) good.push('Could take all our heat');
   if (u.score.tempGap < 0) warn.push('Needs hotter water than we supply');
   if (u.score.paybackYears > 25) warn.push('Long payback');
-  if (u.distanceKm >= 10) warn.push('Far away');
+  if (u.distanceKm >= 0.8) warn.push('At the edge of the 1 km range');
   return good.slice(0, 3).map(t => `<span class="why ok">✓ ${esc(t)}</span>`).join('') + warn.slice(0, 2).map(t => `<span class="why warn">! ${esc(t)}</span>`).join('');
 }
 async function viewSite(app, id) {
@@ -263,9 +294,10 @@ async function viewSite(app, id) {
     <div class="card controls">
       <section>
         <h3 class="ctl-title"><span class="step-n sm">1</span>Where to look</h3>
-        <div class="ctl-row"><span>Search radius</span><output id="rOut"></output></div>
-        <input type="range" id="radius" min="1" max="30" step="0.5" value="${matchState.radius}" aria-label="Search radius in km">
-        <div class="pills" id="rPills">${[2, 5, 10, 20].map(k => `<button type="button" data-r="${k}">${k} km</button>`).join('')}</div>
+        <div class="ctl-row"><span>Search radius ${tip('Why 500 m? Insulated hot-water pipes cost about €900 per metre to lay and lose heat along the way. Within about 500 m a connection usually pays back in under 10 years; beyond 1 km it rarely pays back, so 1 km is the maximum.')}</span><output id="rOut"></output></div>
+        <input type="range" id="radius" min="0.1" max="1" step="0.05" value="${matchState.radius}" aria-label="Search radius">
+        <div class="pills" id="rPills">${[0.25, 0.5, 0.75, 1].map(k => `<button type="button" data-r="${k}">${k === 0.5 ? '★ ' : ''}${dist(k)}</button>`).join('')}</div>
+        <div class="ctl-help" style="margin-top:6px">★ 500 m is the recommended radius. 1 km is the maximum.</div>
       </section>
       <section>
         <h3 class="ctl-title"><span class="step-n sm">2</span>What matters most? ${tip('Changes how companies are ranked. Each company gets a score from 0 to 100.')}</h3>
@@ -291,6 +323,7 @@ async function viewSite(app, id) {
         <label class="check" style="margin-top:10px"><input type="checkbox" id="hideC" ${matchState.hideContacted ? 'checked' : ''}> Hide companies already contacted</label>
       </section>
       <section><div class="summary-stats" id="summary"></div></section>
+      <section id="impact5" class="impact-section"></section>
     </div>
     <div>
       <div class="card">
@@ -334,7 +367,7 @@ async function viewSite(app, id) {
     .bindTooltip(`<b>${esc(site.name)}</b><br>${n0(site.supplyMWh)} MWh/yr surplus`, { direction: 'top' }).addTo(map);
 
   function outputs() {
-    $('#rOut').textContent = matchState.radius + ' km';
+    $('#rOut').textContent = dist(matchState.radius);
     $$('#rPills button').forEach(b => b.classList.toggle('on', +b.dataset.r === matchState.radius));
     $$('#presets button').forEach(b => b.classList.toggle('on', b.dataset.p === matchState.preset));
     $$('#msPills button').forEach(b => b.classList.toggle('on', +b.dataset.m === matchState.minScore));
@@ -363,17 +396,22 @@ async function viewSite(app, id) {
       <div><b>${list.filter(u => u.score.total >= 50 && u.score.total < 70).length}</b><span>good matches</span></div>
       <div><b>${n0(site.supplyMWh)}</b><span>MWh/yr we can supply</span></div>
       <div><b>${n0(Math.max(0, ...list.map(u => u.score.co2Tonnes)))}</b><span>t CO₂/yr saved by the best match</span></div>`;
+    // impact if the 5 best matches sign (capped at the heat this site actually has)
+    const top5 = list.slice(0, 5), mwh5 = Math.min(site.supplyMWh, top5.reduce((a, u) => a + u.score.deliveredMWh, 0)), im5 = impactOf(mwh5);
+    $('#impact5').innerHTML = top5.length ? `<h3 class="ctl-title" style="margin-bottom:8px">🌱 If the ${top5.length} best sign ${tip(impactMethod())}</h3>
+      <div class="impact-mini"><b>${n0(im5.co2Tonnes)}</b> t CO₂ avoided / year</div>
+      <div class="impact-mini-eq">${n0(im5.heatMWh)} MWh heat · 🏠 ${n0(im5.homes)} homes · 🚗 ${n0(im5.cars)} cars · ${pct(mwh5 / site.supplyMWh)} of this site's waste heat used</div>` : '';
     $('#mrows').innerHTML = list.map(u => `
       <tr class="clickable ${selected.has(u.id) ? 'selected' : ''}" data-id="${u.id}">
         <td><input type="checkbox" class="sel" ${selected.has(u.id) ? 'checked' : ''}></td>
         <td class="co"><div><span class="rank">${u.rank}</span><b>${esc(u.name)}</b></div><div class="whys">${reasons(u, site)}</div></td>
         <td>${esc(u.sectorLabel)}</td>
-        <td class="r num">${n1(u.distanceKm)} km</td>
+        <td class="r num">${dist(u.distanceKm)}</td>
         <td>${scoreBar(u.score.total)}</td>
         <td>${u.lead ? statusBadge(u.lead.status) : '<span class="muted" style="font-size:12.5px">Not contacted</span>'}</td>
       </tr>`).join('') || `<tr><td colspan="6" class="empty">No businesses match these settings.<div class="toolbar" style="justify-content:center;margin-top:12px">
-        ${matchState.radius < 20 ? '<button class="btn sm" id="widen">Search up to 20 km</button>' : ''}<button class="btn sm" id="resetF">Show all businesses</button></div></td></tr>`;
-    const w = $('#widen'); if (w) w.onclick = () => { matchState.radius = 20; load(true); };
+        ${matchState.radius < 1 ? '<button class="btn sm" id="widen">Search up to 1 km</button>' : ''}<button class="btn sm" id="resetF">Show all businesses</button></div></td></tr>`;
+    const w = $('#widen'); if (w) w.onclick = () => { matchState.radius = 1; $('#radius').value = 1; load(true); };
     const rf = $('#resetF'); if (rf) rf.onclick = () => { Object.assign(matchState, { sector: '', minScore: 0, hideContacted: false }); $('#sector').value = ''; $('#hideC').checked = false; outputs(); render(false); };
     $('#all').checked = list.length > 0 && list.every(u => selected.has(u.id));
     // map
@@ -407,16 +445,16 @@ async function viewSite(app, id) {
         ${sc('Heat demand fit', s.energy)}${sc('Chance of signing', s.likelihood)}${sc('Cost to connect', s.feasibility)}
         <h3 class="section-title">Business case (indicative)</h3>
         <dl class="kv">
-          <dt>Heat deliverable</dt><dd>${n0(s.deliveredMWh)} MWh/yr</dd>
+          <dt>Heat deliverable</dt><dd>${n0(s.deliveredMWh)} MWh/yr <span class="muted" style="font-weight:400">(🏠 ${n0(s.homes)} homes)</span></dd>
           <dt>Annual savings for customer</dt><dd>${eur(s.annualSavings)}</dd>
-          <dt>CO₂ avoided</dt><dd>${n0(s.co2Tonnes)} t/yr</dd>
+          <dt>CO₂ avoided</dt><dd>${n0(s.co2Tonnes)} t/yr <span class="muted" style="font-weight:400">(🚗 ${n0(s.co2Tonnes / META.econ.carCO2t)} cars)</span></dd>
           <dt>Connection capex</dt><dd>${eur(s.capex)}</dd>
           <dt>Payback time ${tip('Years until the cost of the connection is paid back by the heat savings.')}</dt><dd>${s.paybackYears > 40 ? '> 40' : n1(s.paybackYears)} years</dd>
           <dt>Temperature margin ${tip('How much hotter our water is than what they need. Negative means we cannot fully meet their needs.')}</dt><dd>${s.tempGap > 0 ? '+' : ''}${s.tempGap} °C</dd>
         </dl>
         <h3 class="section-title">Profile</h3>
         <dl class="kv">
-          <dt>Distance</dt><dd>${n1(u.distanceKm)} km</dd>
+          <dt>Distance</dt><dd>${dist(u.distanceKm)}</dd>
           <dt>Annual heat demand</dt><dd>${n0(u.annualDemandMWh)} MWh</dd>
           <dt>Required temperature</dt><dd>${u.requiredTempC} °C</dd>
           <dt>Demand matches cremator hours</dt><dd>${pct(u.profileFit)}</dd>
@@ -462,7 +500,7 @@ async function viewSite(app, id) {
 // ----- outreach email modal -----
 function openOutreach(site, users, done) {
   let idx = 0;
-  const vars = u => ({ company: u.name, contact_name: u.contact.name, site_name: site.name, city: site.city, distance: n1(u.distanceKm), supply_temp: site.supplyTempC,
+  const vars = u => ({ company: u.name, contact_name: u.contact.name, site_name: site.name, city: site.city, distance: dist(u.distanceKm), supply_temp: site.supplyTempC,
     delivered_mwh: n0(u.score.deliveredMWh), savings: n0(u.score.annualSavings), co2: n0(u.score.co2Tonnes), payback: u.score.paybackYears, sender: $('#oSender')?.value || 'FT Heat Partnerships' });
   const fill = (t, v) => t.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in v ? esc(v[k]) : esc(m)));
   openModal(`
@@ -565,7 +603,7 @@ async function viewPipeline(app) {
       return `<div class="col" data-status="${esc(s)}"><div class="col-head">${statusBadge(s)}<span class="muted">${items.length} · ${n0(mwh / 1000)} GWh</span></div>
         <div class="col-body">${items.slice(0, 120).map(l => `<div class="kcard" draggable="true" data-id="${l.id}">
           <div class="t">${esc(l.userName)}</div><div class="m">${esc(l.sectorLabel)}</div><div class="m">↳ ${esc(l.siteName)}</div>
-          <div class="f"><span class="tag">${scoreWord(l.score)} · ${l.score}</span><span class="muted">${n0(l.deliveredMWh)} MWh · ${n1(l.distanceKm)} km</span></div>
+          <div class="f"><span class="tag">${scoreWord(l.score)} · ${l.score}</span><span class="muted">${n0(l.deliveredMWh)} MWh · ${dist(l.distanceKm)}</span></div>
           <label class="move">Move to <select data-id="${l.id}" aria-label="Move ${esc(l.userName)} to another stage">${META.statuses.map(o => `<option ${o === l.status ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label></div>`).join('')}
           ${items.length ? '' : '<div class="col-empty">Nothing here yet</div>'}
           ${items.length > 120 ? `<div class="muted" style="text-align:center;font-size:12px">+${items.length - 120} more, use the filters</div>` : ''}</div></div>`;
@@ -602,7 +640,7 @@ function openLead(l, done) {
     <div class="modal-body">
       <dl class="kv">
         <dt>Heat source</dt><dd><a href="#/site/${l.siteId}" data-close>${esc(l.siteName)}</a></dd>
-        <dt>Distance</dt><dd>${n1(l.distanceKm)} km</dd>
+        <dt>Distance</dt><dd>${dist(l.distanceKm)}</dd>
         <dt>Match score</dt><dd>${l.score}</dd>
         <dt>Heat deliverable</dt><dd>${n0(l.deliveredMWh)} MWh/yr</dd>
         <dt>CO₂ avoided</dt><dd>${n0(l.co2Tonnes)} t/yr</dd>
