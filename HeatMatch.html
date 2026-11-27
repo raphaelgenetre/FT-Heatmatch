@@ -974,6 +974,95 @@ body.locked main { max-width: none; padding: 0; }
 .user-box + .sidebar-foot { margin-top: 0; }
 .avatar { width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--brand-100); color: var(--brand-700); display: grid; place-items: center; font-weight: 700; }
 .user-email { font-size: 12.5px; font-weight: 600; color: var(--brand-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+
+/* =================== friendlier UI =================== */
+:focus-visible { outline: 3px solid var(--brand-100); outline-offset: 2px; }
+.btn:focus-visible, .pills button:focus-visible, .presets button:focus-visible { outline: 3px solid var(--ft-orange); outline-offset: 2px; }
+
+/* help bubbles */
+.tip { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #e7e8e9; color: var(--muted);
+  font-size: 10.5px; font-weight: 700; cursor: help; position: relative; margin-left: 3px; vertical-align: 1px; text-transform: none; letter-spacing: 0; }
+.tip:hover, .tip:focus { background: var(--ft-orange); color: #fff; outline: none; }
+.tip:hover::after, .tip:focus::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--brand-900); color: #fff; padding: 9px 11px; border-radius: 8px; font-size: 12.5px; font-weight: 500; line-height: 1.45;
+  width: max-content; max-width: 250px; white-space: normal; text-align: left; z-index: 60; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+
+/* welcome guide */
+.welcome { padding: 18px 22px 20px; margin-bottom: 16px; border-left: 4px solid var(--ft-orange); }
+.welcome-head { display: flex; justify-content: space-between; gap: 12px; }
+.welcome-head p { margin: 4px 0 0; }
+.steps { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.steps li { display: flex; gap: 12px; align-items: flex-start; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.steps p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+.step-n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--ft-orange); color: #fff; font-weight: 800; display: grid; place-items: center; }
+.step-n.sm { width: 22px; height: 22px; font-size: 12px; display: inline-grid; margin-right: 8px; vertical-align: middle; }
+
+/* quick search */
+.quick-search { padding: 16px 20px; margin-bottom: 16px; position: relative; }
+.qs-label { font-weight: 650; color: var(--brand-900); display: block; margin-bottom: 8px; }
+.qs-box { position: relative; }
+.qs-box input { padding: 12px 14px 12px 40px; font-size: 15px; border-radius: 10px; }
+.qs-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-52%); font-size: 20px; color: var(--muted); }
+.qs-results { position: absolute; left: 20px; right: 20px; top: calc(100% - 8px); background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.12); z-index: 700; overflow: hidden; }
+.qs-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; color: var(--text); border-bottom: 1px solid var(--line); }
+.qs-item:last-child { border-bottom: 0; }
+.qs-item:hover, .qs-item:first-child { background: var(--brand-100); color: var(--text); }
+.qs-empty { padding: 14px; color: var(--muted); }
+
+/* installations */
+.open-link { color: var(--brand-700); font-weight: 600; font-size: 13px; white-space: nowrap; opacity: .55; }
+tr.clickable:hover .open-link { opacity: 1; }
+
+/* matching controls */
+.ctl-title { display: flex; align-items: center; margin-bottom: 12px; color: var(--brand-900); text-transform: none; letter-spacing: 0; font-size: 14px; }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pills button { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 20px; padding: 5px 8px; font: 600 12.5px var(--font); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.pills button:hover { border-color: var(--ft-orange); color: var(--brand-900); }
+.pills button.on { background: var(--brand-100); border-color: var(--ft-orange); color: var(--brand-700); }
+.presets { display: grid; gap: 6px; }
+.presets button { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 8px 11px; cursor: pointer; font: inherit; display: flex; flex-direction: column; }
+.presets button b { font-size: 13px; color: var(--brand-900); }
+.presets button span { font-size: 12px; color: var(--muted); }
+.presets button:hover { border-color: var(--ft-orange); }
+.presets button.on { border-color: var(--ft-orange); background: var(--brand-100); box-shadow: inset 3px 0 0 var(--ft-orange); }
+.advanced { margin-top: 10px; }
+.advanced summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--brand-700); padding: 4px 0; }
+.advanced[open] summary { margin-bottom: 8px; }
+.field-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+
+/* match table */
+.match-table { min-width: 720px; }
+.match-table td.co { min-width: 260px; }
+.rank { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 6px; background: #f0f0f0; color: var(--muted); font-size: 11.5px; font-weight: 700; margin-right: 8px; }
+.whys { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 5px; }
+.why { font-size: 11.5px; padding: 1px 7px; border-radius: 5px; white-space: nowrap; font-weight: 500; }
+.why.ok { background: var(--ok-100); color: var(--ok-600); }
+.why.warn { background: var(--warn-100); color: #8a6508; }
+.score { min-width: 150px; }
+.sw { font-size: 11.5px; font-weight: 700; width: 46px; }
+.sw-strong { color: var(--brand-700); }
+.sw-good { color: #b0782c; }
+.sw-weak { color: var(--muted); }
+
+/* pipeline */
+.move { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.move select { padding: 3px 6px; font-size: 12px; border-radius: 6px; width: auto; flex: 1; }
+.col-empty { text-align: center; color: var(--muted); font-size: 12.5px; padding: 24px 8px; border: 1px dashed #cfd2d4; border-radius: 8px; }
+
+@media (max-width: 900px) {
+  .steps { grid-template-columns: 1fr; }
+  .qs-results { left: 16px; right: 16px; }
+}
+
+/* let grid columns shrink on small screens (wide tables scroll inside their card) */
+.match-layout > *, .two > *, .mail-layout > * { min-width: 0; }
+@media (max-width: 900px) { .match-layout, .two, .mail-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.move { white-space: nowrap; }
+.kcard .f { flex-wrap: wrap; row-gap: 4px; }
+.kcard .f .muted { white-space: nowrap; }
+.mini { grid-template-columns: 130px 1fr 30px; }
 </style>
 </head>
 <body class="locked">
@@ -1541,7 +1630,12 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.ad
 const statusBadge = s => `<span class="badge s-${slug(s)}">${esc(s)}</span>`;
 const siteBadge = s => s === 'partnership' ? '<span class="badge partnership">Partnership</span>' : s === 'progress' ? '<span class="badge progress">In progress</span>' : '<span class="badge">No partnership yet</span>';
 const scoreColor = v => v >= 70 ? css('--heat-600') : v >= 50 ? '#f6c48f' : '#c3ccd8';
-const scoreBar = v => `<div class="score"><b>${v}</b><div class="bar"><i style="width:${v}%;background:${scoreColor(v)}"></i></div></div>`;
+const scoreWord = v => v >= 70 ? 'Strong' : v >= 50 ? 'Good' : 'Weak';
+const scoreBar = v => `<div class="score"><b>${v}</b><div class="bar"><i style="width:${v}%;background:${scoreColor(v)}"></i></div><span class="sw sw-${scoreWord(v).toLowerCase()}">${scoreWord(v)}</span></div>`;
+// small "?" help bubble (hover or keyboard focus)
+const tip = text => `<span class="tip" tabindex="0" role="note" aria-label="${esc(text)}" data-tip="${esc(text)}">?</span>`;
+const lsGet = k => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
 let META = null;
 let maps = [];
@@ -1598,17 +1692,33 @@ async function viewOverview(app) {
   const maxSectorLeads = Math.max(...sectors.map(s => s.leads), 1);
   const pipeColor = { 'Contacted': '#8a9095', 'In discussion': css('--warn-600'), 'Feasibility study': '#e0a63a', 'Contract signed': css('--ok-600'), 'Declined': css('--bad-600') };
 
+  const welcome = lsGet('hm-welcome-hidden') ? '' : `
+  <div class="card welcome" id="welcome">
+    <div class="welcome-head"><div><h2>Welcome to HeatMatch 👋</h2><p class="muted">Turn the waste heat of FT cremators into heat partnerships, in three steps.</p></div>
+      <button class="x" id="hideWelcome" title="Hide this guide" aria-label="Hide this guide">×</button></div>
+    <ol class="steps">
+      <li><span class="step-n">1</span><div><b>Pick a crematorium</b><p>Search below or click a dot on the map.</p></div></li>
+      <li><span class="step-n">2</span><div><b>See who could use its heat</b><p>Nearby businesses are ranked from strong to weak matches, with the reasons why.</p></div></li>
+      <li><span class="step-n">3</span><div><b>Contact them and track deals</b><p>Send a personalised email, then follow each deal in the pipeline.</p></div></li>
+    </ol>
+  </div>`;
   app.innerHTML = `
   <div class="page-head">
     <div><h1>Global overview</h1><p>Surplus heat from FT cremators worldwide and the partnerships built on it.</p></div>
-    <a class="btn primary" href="#/installations">Find heat users for an installation →</a>
+    <a class="btn primary" href="#/installations">Start matching →</a>
+  </div>
+  ${welcome}
+  <div class="card quick-search">
+    <label for="qs" class="qs-label">Find a crematorium</label>
+    <div class="qs-box"><span class="qs-icon" aria-hidden="true">⌕</span><input type="text" id="qs" placeholder="Type a city or crematorium name, e.g. London, Rotterdam…" autocomplete="off"></div>
+    <div class="qs-results" id="qsRes" hidden></div>
   </div>
   <div class="grid kpis">
-    <div class="card kpi"><div class="label">Cremators</div><div class="value">${n0(t.units)}</div><div class="sub">${n0(t.sites)} sites · ${t.countries} countries · ${pct(t.europeUnits / t.units)} in Europe</div></div>
-    <div class="card kpi accent"><div class="label">Recoverable heat</div><div class="value">${n0(t.supplyGWh)}<small>GWh/yr</small></div><div class="sub">Surplus heat across the installed base</div></div>
-    <div class="card kpi"><div class="label">Signed partnerships</div><div class="value">${n0(t.partnerships)}</div><div class="sub">${t.sitesWithPartnership} sites · ${pct(t.sitesWithPartnership / t.sites)} of the network</div></div>
-    <div class="card kpi"><div class="label">Heat delivered</div><div class="value">${n1(t.deliveredGWh)}<small>GWh/yr</small></div><div class="sub">${n0(t.co2Tonnes)} t CO₂ avoided per year</div></div>
-    <div class="card kpi"><div class="label">Active pipeline</div><div class="value">${n0(t.activeLeads)}</div><div class="sub">${t.sitesInProgress} sites in progress · ${n0(t.emailsSent)} emails sent</div></div>
+    <div class="card kpi"><div class="label">Cremators ${tip('Individual FT cremator units. A crematorium site can have one or more.')}</div><div class="value">${n0(t.units)}</div><div class="sub">${n0(t.sites)} sites · ${t.countries} countries · ${pct(t.europeUnits / t.units)} in Europe</div></div>
+    <div class="card kpi accent"><div class="label">Recoverable heat ${tip('Waste heat the cremators could supply each year. 1 GWh = 1,000 MWh, roughly the yearly heating of 70 homes.')}</div><div class="value">${n0(t.supplyGWh)}<small>GWh/yr</small></div><div class="sub">Surplus heat across the installed base</div></div>
+    <div class="card kpi"><div class="label">Signed partnerships ${tip('Businesses that signed a contract to buy heat from a crematorium.')}</div><div class="value">${n0(t.partnerships)}</div><div class="sub">${t.sitesWithPartnership} sites · ${pct(t.sitesWithPartnership / t.sites)} of the network</div></div>
+    <div class="card kpi"><div class="label">Heat delivered ${tip('Heat supplied each year through signed partnerships, replacing mostly gas heating.')}</div><div class="value">${n1(t.deliveredGWh)}<small>GWh/yr</small></div><div class="sub">${n0(t.co2Tonnes)} t CO₂ avoided per year</div></div>
+    <div class="card kpi"><div class="label">Active pipeline ${tip('Deals in progress: contacted, in discussion or in a feasibility study.')}</div><div class="value">${n0(t.activeLeads)}</div><div class="sub">${t.sitesInProgress} sites in progress · ${n0(t.emailsSent)} emails sent</div></div>
   </div>
   <div class="grid two">
     <div class="card">
@@ -1638,6 +1748,20 @@ async function viewOverview(app) {
       <tbody>${st.countries.slice(0, 14).map(c => `<tr><td>${esc(c.name)}</td><td class="r num">${c.units}</td><td class="r num">${c.partnerships}</td><td class="r num">${c.inProgress}</td></tr>`).join('')}</tbody></table></div></div>
   </div>`;
 
+  // welcome guide + quick search
+  const hw = $('#hideWelcome'); if (hw) hw.onclick = () => { lsSet('hm-welcome-hidden', '1'); $('#welcome').remove(); };
+  const qs = $('#qs'), qr = $('#qsRes');
+  const showResults = () => {
+    const q = qs.value.trim().toLowerCase();
+    if (!q) { qr.hidden = true; return; }
+    const hits = sites.filter(s => (s.name + ' ' + s.city + ' ' + s.countryName).toLowerCase().includes(q)).sort((a, b) => b.supplyMWh - a.supplyMWh).slice(0, 6);
+    qr.innerHTML = hits.map(s => `<a class="qs-item" href="#/site/${s.id}"><span><b>${esc(s.name)}</b><br><span class="muted">${esc(s.city)}, ${esc(s.countryName)} · ${s.units} cremator${s.units > 1 ? 's' : ''}</span></span>${siteBadge(s.status)}</a>`).join('')
+      || `<div class="qs-empty">No crematorium matches “${esc(qs.value)}”. Try a city name.</div>`;
+    qr.hidden = false;
+  };
+  qs.oninput = showResults;
+  qs.onkeydown = e => { if (e.key === 'Enter') { const a = $('.qs-item', qr); if (a) location.hash = a.getAttribute('href'); } };
+
   const map = baseMap($('#gmap')).setView([51.5, 6], 4);
   const col = { partnership: css('--ok-600'), progress: css('--ft-orange'), none: '#b4b8bb' };
   const order = { none: 0, progress: 1, partnership: 2 };
@@ -1645,7 +1769,7 @@ async function viewOverview(app) {
     L.circleMarker([s.lat, s.lon], { radius: s.status === 'none' ? 4 : 6, color: '#fff', weight: 1, fillColor: col[s.status], fillOpacity: .9 })
       .bindPopup(`<h4>${esc(s.name)}</h4><div class="muted">${esc(s.city)}, ${esc(s.countryName)}</div>
         <div style="margin:8px 0">${s.units} × ${esc(s.model)} · ${n0(s.supplyMWh)} MWh/yr surplus<br>${s.leads} leads · ${s.signed} signed</div>
-        <a class="btn sm primary" href="#/site/${s.id}">Open matching →</a>`).addTo(map);
+        <a class="btn sm primary" href="#/site/${s.id}">Find heat users →</a>`).addTo(map);
   });
 }
 
@@ -1655,15 +1779,15 @@ async function viewInstallations(app) {
   const sites = await api('/sites');
   const countries = [...new Map(sites.map(s => [s.country, s.countryName])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
   app.innerHTML = `
-  <div class="page-head"><div><h1>Installations</h1><p>${n0(sites.reduce((a, s) => a + s.units, 0))} FT cremators at ${sites.length} sites. Pick one to find heat users nearby.</p></div></div>
+  <div class="page-head"><div><h1>Installations</h1><p>${n0(sites.reduce((a, s) => a + s.units, 0))} FT cremators at ${sites.length} sites. <b>Click a crematorium</b> to find businesses nearby that could use its heat.</p></div></div>
   <div class="card">
     <div class="card-head"><div class="toolbar">
-      <input type="text" id="q" placeholder="Search by name, city or ID…" value="${esc(instState.q)}">
+      <input type="text" id="q" placeholder="Search a city or crematorium…" value="${esc(instState.q)}">
       <select id="country"><option value="">All countries</option>${countries.map(([c, n]) => `<option value="${c}" ${instState.country === c ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
       <select id="status"><option value="">Any status</option><option value="none">No partnership yet</option><option value="progress">In progress</option><option value="partnership">Partnership</option></select>
       <select id="sort"><option value="supplyMWh">Sort: surplus heat</option><option value="name">Sort: name</option><option value="leads">Sort: leads</option></select>
     </div><span class="muted" id="count"></span></div>
-    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Installation</th><th>Location</th><th class="r">Cremators</th><th>Model</th><th class="r">Surplus heat</th><th>Status</th><th class="r">Leads</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>Crematorium</th><th>Location</th><th class="r">Cremators</th><th class="r">Waste heat / year</th><th>Partnership status</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     <div class="pager"><span id="pinfo"></span><span><button class="btn sm" id="prev">← Prev</button> <button class="btn sm" id="next">Next →</button></span></div>
   </div>`;
   $('#status').value = instState.status; $('#sort').value = instState.sort;
@@ -1674,10 +1798,11 @@ async function viewInstallations(app) {
     list.sort((a, b) => instState.sort === 'name' ? a.name.localeCompare(b.name) : b[instState.sort] - a[instState.sort]);
     const pages = Math.max(1, Math.ceil(list.length / PER));
     instState.page = Math.min(instState.page, pages - 1);
-    $('#count').textContent = `${list.length} sites`;
+    $('#count').textContent = `${list.length} crematori${list.length === 1 ? 'um' : 'a'}`;
     $('#rows').innerHTML = list.slice(instState.page * PER, (instState.page + 1) * PER).map(s => `
-      <tr class="clickable" data-id="${s.id}"><td class="muted num">${s.id}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.city)}, ${esc(s.countryName)}</td>
-      <td class="r num">${s.units}</td><td>${esc(s.model)}</td><td class="r num">${n0(s.supplyMWh)} MWh/yr</td><td>${siteBadge(s.status)}</td><td class="r num">${s.leads}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">No installations match these filters.</td></tr>';
+      <tr class="clickable" data-id="${s.id}"><td><b>${esc(s.name)}</b><div class="muted" style="font-size:12px">${esc(s.model)} · ${s.id}</div></td><td>${esc(s.city)}, ${esc(s.countryName)}</td>
+      <td class="r num">${s.units}</td><td class="r num">${n0(s.supplyMWh)} MWh</td><td>${siteBadge(s.status)}${s.leads ? ` <span class="muted" style="font-size:12px">${s.leads} lead${s.leads > 1 ? 's' : ''}</span>` : ''}</td><td class="r"><span class="open-link">Find heat users →</span></td></tr>`).join('') || `<tr><td colspan="6" class="empty">No crematorium matches these filters.<br><button class="btn sm" id="clearF" style="margin-top:10px">Clear filters</button></td></tr>`;
+    const cf = $('#clearF'); if (cf) cf.onclick = () => { Object.assign(instState, { q: '', country: '', status: '', page: 0 }); $('#q').value = ''; $('#country').value = ''; $('#status').value = ''; render(); };
     $('#pinfo').textContent = `Page ${instState.page + 1} of ${pages}`;
     $('#prev').disabled = instState.page === 0; $('#next').disabled = instState.page >= pages - 1;
   }
@@ -1692,7 +1817,29 @@ async function viewInstallations(app) {
 }
 
 // ======================= SITE / MATCHING =======================
-const matchState = { radius: 10, we: 40, wl: 30, wf: 30, sector: '', minScore: 0, hideContacted: false, view: 'map' };
+const matchState = { radius: 10, we: 40, wl: 30, wf: 30, preset: 'balanced', sector: '', minScore: 0, hideContacted: false, view: 'map' };
+const PRESETS = {
+  balanced:   { label: 'Balanced',            help: 'A mix of everything',               w: [40, 30, 30] },
+  demand:     { label: 'Biggest heat users',  help: 'Who can use the most heat',         w: [70, 15, 15] },
+  likely:     { label: 'Most likely to sign', help: 'Who is most open to a contract',    w: [15, 70, 15] },
+  cheap:      { label: 'Cheapest to connect', help: 'Short pipes, fast payback',         w: [15, 15, 70] },
+};
+// Plain-language reasons shown under each company
+function reasons(u, site) {
+  const good = [], warn = [];
+  if (u.distanceKm < 2) good.push(`Only ${n1(u.distanceKm)} km away`);
+  if (u.score.paybackYears <= 8) good.push(`Pays back in ${n1(u.score.paybackYears)} yrs`);
+  if (u.publicSector) good.push('Public sector');
+  if (u.profileFit >= 0.85) good.push('Needs heat when cremators run');
+  if (u.sustainability.startsWith('Certified')) good.push('Certified sustainable');
+  else if (u.sustainability.startsWith('Net-zero')) good.push('Net-zero goal');
+  if (u.heatingSystemAge >= 15) good.push(`Old boiler (${u.heatingSystemAge} yrs)`);
+  if (u.annualDemandMWh >= site.supplyMWh) good.push('Could take all our heat');
+  if (u.score.tempGap < 0) warn.push('Needs hotter water than we supply');
+  if (u.score.paybackYears > 25) warn.push('Long payback');
+  if (u.distanceKm >= 10) warn.push('Far away');
+  return good.slice(0, 3).map(t => `<span class="why ok">✓ ${esc(t)}</span>`).join('') + warn.slice(0, 2).map(t => `<span class="why warn">! ${esc(t)}</span>`).join('');
+}
 async function viewSite(app, id) {
   const selected = new Set();
   let data, site, map, layer, circle;
@@ -1701,66 +1848,73 @@ async function viewSite(app, id) {
   await loadSite();
 
   app.innerHTML = `
-  <div class="crumb"><a href="#/installations">Installations</a> / ${esc(site.id)}</div>
+  <div class="crumb"><a href="#/installations">← All crematoria</a></div>
   <div class="page-head">
     <div><h1>${esc(site.name)}</h1><p>${esc(site.city)}, ${esc(site.countryName)} · ${esc(site.operator)} · ${siteBadge(site.status)}</p></div>
-    <div class="toolbar"><button class="btn" id="editBtn">✎ Update operating data</button></div>
+    <div class="toolbar"><button class="btn" id="editBtn" title="Enter the latest figures from this site">✎ Update site data</button></div>
   </div>
   <div class="card facts" id="facts"></div>
   <div class="grid match-layout">
     <div class="card controls">
       <section>
+        <h3 class="ctl-title"><span class="step-n sm">1</span>Where to look</h3>
         <div class="ctl-row"><span>Search radius</span><output id="rOut"></output></div>
-        <input type="range" id="radius" min="1" max="30" step="0.5" value="${matchState.radius}">
-        <div class="ctl-help">Heat users within this distance of the crematorium.</div>
+        <input type="range" id="radius" min="1" max="30" step="0.5" value="${matchState.radius}" aria-label="Search radius in km">
+        <div class="pills" id="rPills">${[2, 5, 10, 20].map(k => `<button type="button" data-r="${k}">${k} km</button>`).join('')}</div>
       </section>
       <section>
-        <h3 style="margin-bottom:10px">Ranking weights</h3>
-        <div class="ctl-row"><span>Energy match</span><output id="weOut"></output></div>
-        <input type="range" id="we" min="0" max="100" value="${matchState.we}">
-        <div class="ctl-help">How much heat they need, and when.</div>
-        <div class="ctl-row"><span>Contract likelihood</span><output id="wlOut"></output></div>
-        <input type="range" id="wl" min="0" max="100" value="${matchState.wl}">
-        <div class="ctl-help">Sector, public support, sustainability goals, boiler age.</div>
-        <div class="ctl-row"><span>Technical feasibility &amp; cost</span><output id="wfOut"></output></div>
-        <input type="range" id="wf" min="0" max="100" value="${matchState.wf}">
-        <div class="ctl-help">Temperature fit, pipe length, payback.</div>
+        <h3 class="ctl-title"><span class="step-n sm">2</span>What matters most? ${tip('Changes how companies are ranked. Each company gets a score from 0 to 100.')}</h3>
+        <div class="presets" id="presets">${Object.entries(PRESETS).map(([k, p]) => `<button type="button" data-p="${k}"><b>${p.label}</b><span>${p.help}</span></button>`).join('')}</div>
+        <details class="advanced" id="adv">
+          <summary>Customise the weights</summary>
+          <div class="ctl-row"><span>Heat demand fit</span><output id="weOut"></output></div>
+          <input type="range" id="we" min="0" max="100" value="${matchState.we}">
+          <div class="ctl-help">How much heat they need, and whether they need it when the cremators run.</div>
+          <div class="ctl-row"><span>Chance of signing</span><output id="wlOut"></output></div>
+          <input type="range" id="wl" min="0" max="100" value="${matchState.wl}">
+          <div class="ctl-help">Sector, public sector, sustainability goals, age of their boiler.</div>
+          <div class="ctl-row"><span>Cost to connect</span><output id="wfOut"></output></div>
+          <input type="range" id="wf" min="0" max="100" value="${matchState.wf}">
+          <div class="ctl-help">Pipe length, water temperature, payback time.</div>
+        </details>
       </section>
       <section>
-        <label class="field">Sector<select id="sector"><option value="">All sectors</option>${Object.entries(META.sectors).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
-        <div class="ctl-row" style="margin-top:12px"><span>Minimum score</span><output id="msOut"></output></div>
-        <input type="range" id="minScore" min="0" max="90" step="5" value="${matchState.minScore}">
-        <label class="check" style="margin-top:8px"><input type="checkbox" id="hideC" ${matchState.hideContacted ? 'checked' : ''}> Hide already contacted</label>
+        <h3 class="ctl-title"><span class="step-n sm">3</span>Filter</h3>
+        <label class="field">Type of business<select id="sector"><option value="">All types</option>${Object.entries(META.sectors).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+        <div class="field-label" style="margin-top:12px">Show</div>
+        <div class="pills wide" id="msPills"><button type="button" data-m="0">All</button><button type="button" data-m="50">Good + strong</button><button type="button" data-m="70">Strong only</button></div>
+        <label class="check" style="margin-top:10px"><input type="checkbox" id="hideC" ${matchState.hideContacted ? 'checked' : ''}> Hide companies already contacted</label>
       </section>
       <section><div class="summary-stats" id="summary"></div></section>
     </div>
     <div>
       <div class="card">
         <div class="card-head">
-          <h2 id="resTitle">Matching heat users</h2>
+          <div><h2 id="resTitle">Matching heat users</h2><div class="muted" style="font-size:12.5px">Best matches first. Click a company for its full business case.</div></div>
           <div class="toolbar">
-            <div class="legend"><span><i style="background:${css('--heat-600')}"></i>70+</span><span><i style="background:#f6c48f"></i>50–69</span><span><i style="background:#c3ccd8"></i>&lt;50</span></div>
+            <div class="legend"><span><i style="background:${css('--heat-600')}"></i>Strong</span><span><i style="background:#f6c48f"></i>Good</span><span><i style="background:#c3ccd8"></i>Weak</span></div>
+            <button class="btn sm" id="top5" title="Select the 5 best matches you haven't contacted yet">☆ Select top 5</button>
             <div class="seg"><button data-v="map">Map + list</button><button data-v="list">List only</button></div>
           </div>
         </div>
         <div id="smap" class="map"></div>
         <div class="table-wrap"><table class="match-table">
-          <thead><tr><th style="width:36px"><input type="checkbox" id="all" title="Select all visible"></th><th>#</th><th>Company</th><th>Sector</th><th class="r">Distance</th><th class="r">Heat demand</th><th>Match score</th><th class="r">Payback</th><th>Status</th></tr></thead>
+          <thead><tr><th style="width:36px"><input type="checkbox" id="all" title="Select all" aria-label="Select all"></th><th>Company</th><th>Type</th><th class="r">Distance</th><th>Match</th><th>Status</th></tr></thead>
           <tbody id="mrows"></tbody></table></div>
       </div>
-      <div class="actionbar" id="abar" hidden><span id="selInfo"></span><span class="toolbar"><button class="btn sm" id="clearSel" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Clear</button><button class="btn heat" id="sendBtn">✉ Send outreach email</button></span></div>
+      <div class="actionbar" id="abar" hidden><span id="selInfo"></span><span class="toolbar"><button class="btn sm" id="clearSel" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">Clear</button><button class="btn heat" id="sendBtn">Next: write the email →</button></span></div>
     </div>
   </div>`;
 
   function renderFacts() {
     $('#facts').innerHTML = [
-      ['Cremators', `${site.units} <small>× ${esc(site.model)}</small>`],
-      ['Cremations / yr', n0(site.cremationsPerYear)],
-      ['Operating hours', `${site.hoursPerDay}h <small>× ${site.daysPerWeek} days/wk</small>`],
-      ['Recoverable output', `${n0(site.recoverableKW)} <small>kW</small>`],
-      ['Supply temperature', `${site.supplyTempC} <small>°C</small>`],
-      ['Annual surplus heat', `${n0(site.supplyMWh)} <small>MWh/yr</small>`],
-    ].map(([k, v]) => `<div class="fact"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+      ['Cremators', `${site.units} <small>× ${esc(site.model)}</small>`, ''],
+      ['Cremations / yr', n0(site.cremationsPerYear), ''],
+      ['Running hours', `${site.hoursPerDay}h <small>× ${site.daysPerWeek} days/wk</small>`, 'Heat is only available while the cremators run.'],
+      ['Heat output', `${n0(site.recoverableKW)} <small>kW</small>`, 'How much heat can be recovered at any moment while running.'],
+      ['Water temp.', `${site.supplyTempC} <small>°C</small>`, 'Temperature of the hot water we can supply. Companies needing hotter water are harder to serve.'],
+      ['Waste heat / year', `${n0(site.supplyMWh)} <small>MWh</small>`, '1 MWh heats an average home for about 1–2 months.'],
+    ].map(([k, v, h]) => `<div class="fact"><div class="k">${k}${h ? ' ' + tip(h) : ''}</div><div class="v">${v}</div></div>`).join('');
   }
   renderFacts();
 
@@ -1776,11 +1930,14 @@ async function viewSite(app, id) {
 
   function outputs() {
     $('#rOut').textContent = matchState.radius + ' km';
+    $$('#rPills button').forEach(b => b.classList.toggle('on', +b.dataset.r === matchState.radius));
+    $$('#presets button').forEach(b => b.classList.toggle('on', b.dataset.p === matchState.preset));
+    $$('#msPills button').forEach(b => b.classList.toggle('on', +b.dataset.m === matchState.minScore));
+    ['we', 'wl', 'wf'].forEach(k => { $('#' + k).value = matchState[k]; });
     const sum = (+matchState.we + +matchState.wl + +matchState.wf) || 1;
     $('#weOut').textContent = Math.round(matchState.we / sum * 100) + '%';
     $('#wlOut').textContent = Math.round(matchState.wl / sum * 100) + '%';
     $('#wfOut').textContent = Math.round(matchState.wf / sum * 100) + '%';
-    $('#msOut').textContent = matchState.minScore;
   }
 
   let fetchTimer;
@@ -1795,25 +1952,24 @@ async function viewSite(app, id) {
   function render(fit) {
     const list = visible();
     for (const id of [...selected]) if (!list.some(u => u.id === id)) selected.delete(id);
-    $('#resTitle').textContent = `${list.length} matching heat user${list.length === 1 ? '' : 's'}`;
-    const top = list.filter(u => u.score.total >= 60);
+    $('#resTitle').textContent = `${list.length} business${list.length === 1 ? '' : 'es'} could use this heat`;
     $('#summary').innerHTML = `
-      <div><b>${n0(list.reduce((a, u) => a + u.annualDemandMWh, 0))}</b><span>MWh/yr total demand</span></div>
-      <div><b>${n0(site.supplyMWh)}</b><span>MWh/yr available</span></div>
-      <div><b>${top.length}</b><span>strong matches (60+)</span></div>
-      <div><b>${n0(Math.max(0, ...list.map(u => u.score.co2Tonnes)))}</b><span>t CO₂/yr, best single match</span></div>`;
+      <div><b>${list.filter(u => u.score.total >= 70).length}</b><span>strong matches</span></div>
+      <div><b>${list.filter(u => u.score.total >= 50 && u.score.total < 70).length}</b><span>good matches</span></div>
+      <div><b>${n0(site.supplyMWh)}</b><span>MWh/yr we can supply</span></div>
+      <div><b>${n0(Math.max(0, ...list.map(u => u.score.co2Tonnes)))}</b><span>t CO₂/yr saved by the best match</span></div>`;
     $('#mrows').innerHTML = list.map(u => `
       <tr class="clickable ${selected.has(u.id) ? 'selected' : ''}" data-id="${u.id}">
         <td><input type="checkbox" class="sel" ${selected.has(u.id) ? 'checked' : ''}></td>
-        <td class="muted num">${u.rank}</td>
-        <td class="co"><b>${esc(u.name)}</b>${u.publicSector ? ' <span class="tag">Public</span>' : ''}<div class="muted" style="font-size:12px">${esc(u.contact.name)} · ${esc(u.contact.role)}</div></td>
+        <td class="co"><div><span class="rank">${u.rank}</span><b>${esc(u.name)}</b></div><div class="whys">${reasons(u, site)}</div></td>
         <td>${esc(u.sectorLabel)}</td>
         <td class="r num">${n1(u.distanceKm)} km</td>
-        <td class="r num">${n0(u.annualDemandMWh)} MWh</td>
-        <td title="Energy ${u.score.energy} · Likelihood ${u.score.likelihood} · Feasibility ${u.score.feasibility}">${scoreBar(u.score.total)}</td>
-        <td class="r num">${u.score.paybackYears > 40 ? '>40' : n1(u.score.paybackYears)} yrs</td>
-        <td>${u.lead ? statusBadge(u.lead.status) : '<span class="muted">—</span>'}</td>
-      </tr>`).join('') || '<tr><td colspan="9" class="empty">No heat users match. Try a bigger radius or a lower minimum score.</td></tr>';
+        <td>${scoreBar(u.score.total)}</td>
+        <td>${u.lead ? statusBadge(u.lead.status) : '<span class="muted" style="font-size:12.5px">Not contacted</span>'}</td>
+      </tr>`).join('') || `<tr><td colspan="6" class="empty">No businesses match these settings.<div class="toolbar" style="justify-content:center;margin-top:12px">
+        ${matchState.radius < 20 ? '<button class="btn sm" id="widen">Search up to 20 km</button>' : ''}<button class="btn sm" id="resetF">Show all businesses</button></div></td></tr>`;
+    const w = $('#widen'); if (w) w.onclick = () => { matchState.radius = 20; load(true); };
+    const rf = $('#resetF'); if (rf) rf.onclick = () => { Object.assign(matchState, { sector: '', minScore: 0, hideContacted: false }); $('#sector').value = ''; $('#hideC').checked = false; outputs(); render(false); };
     $('#all').checked = list.length > 0 && list.every(u => selected.has(u.id));
     // map
     layer.clearLayers();
@@ -1824,14 +1980,14 @@ async function viewSite(app, id) {
         .bindTooltip(`<b>${esc(u.name)}</b><br>${esc(u.sectorLabel)} · score ${u.score.total}`, { direction: 'top' })
         .on('click', () => openUser(u));
       layer.addLayer(m);
-      if (u.score.total >= 60) layer.addLayer(L.polyline([[site.lat, site.lon], [u.lat, u.lon]], { color: css('--heat-500'), weight: 1, opacity: .35, interactive: false }));
+      if (u.score.total >= 70) layer.addLayer(L.polyline([[site.lat, site.lon], [u.lat, u.lon]], { color: css('--heat-500'), weight: 1, opacity: .35, interactive: false }));
     });
     if (fit) map.fitBounds(circle.getBounds(), { padding: [10, 10] });
     updateBar();
   }
   function updateBar() {
     $('#abar').hidden = selected.size === 0;
-    $('#selInfo').innerHTML = `<b>${selected.size}</b> compan${selected.size === 1 ? 'y' : 'ies'} selected for outreach`;
+    $('#selInfo').innerHTML = `<b>${selected.size}</b> compan${selected.size === 1 ? 'y' : 'ies'} selected. Next, you'll see the email before anything is sent.`;
   }
   function toggle(id, on) { on ? selected.add(id) : selected.delete(id); render(false); }
 
@@ -1841,16 +1997,17 @@ async function viewSite(app, id) {
     openDrawer(`
       <div class="modal-head"><div><div class="muted" style="font-size:12px">#${u.rank} · ${esc(u.sectorLabel)}</div><h2>${esc(u.name)}</h2></div><button class="x" data-close>×</button></div>
       <div class="modal-body">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div style="font-size:40px;font-weight:800;color:${scoreColor(s.total)};line-height:1">${s.total}</div><div class="muted">Overall match score<br>${u.lead ? statusBadge(u.lead.status) : 'Not contacted yet'}</div></div>
-        ${sc('Energy match', s.energy)}${sc('Contract likelihood', s.likelihood)}${sc('Feasibility &amp; cost', s.feasibility)}
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div style="font-size:40px;font-weight:800;color:${scoreColor(s.total)};line-height:1">${s.total}</div><div class="muted"><b style="color:var(--brand-900)">${scoreWord(s.total)} match</b> (score out of 100)<br>${u.lead ? statusBadge(u.lead.status) : 'Not contacted yet'}</div></div>
+        <div class="whys" style="margin-bottom:14px">${reasons(u, site)}</div>
+        ${sc('Heat demand fit', s.energy)}${sc('Chance of signing', s.likelihood)}${sc('Cost to connect', s.feasibility)}
         <h3 class="section-title">Business case (indicative)</h3>
         <dl class="kv">
           <dt>Heat deliverable</dt><dd>${n0(s.deliveredMWh)} MWh/yr</dd>
           <dt>Annual savings for customer</dt><dd>${eur(s.annualSavings)}</dd>
           <dt>CO₂ avoided</dt><dd>${n0(s.co2Tonnes)} t/yr</dd>
           <dt>Connection capex</dt><dd>${eur(s.capex)}</dd>
-          <dt>Simple payback</dt><dd>${s.paybackYears > 40 ? '> 40' : n1(s.paybackYears)} years</dd>
-          <dt>Temperature headroom</dt><dd>${s.tempGap > 0 ? '+' : ''}${s.tempGap} °C</dd>
+          <dt>Payback time ${tip('Years until the cost of the connection is paid back by the heat savings.')}</dt><dd>${s.paybackYears > 40 ? '> 40' : n1(s.paybackYears)} years</dd>
+          <dt>Temperature margin ${tip('How much hotter our water is than what they need. Negative means we cannot fully meet their needs.')}</dt><dd>${s.tempGap > 0 ? '+' : ''}${s.tempGap} °C</dd>
         </dl>
         <h3 class="section-title">Profile</h3>
         <dl class="kv">
@@ -1872,9 +2029,13 @@ async function viewSite(app, id) {
   // events
   const debounced = fit => { clearTimeout(fetchTimer); fetchTimer = setTimeout(() => load(fit), 120); };
   $('#radius').oninput = e => { matchState.radius = +e.target.value; outputs(); debounced(true); };
-  ['we', 'wl', 'wf'].forEach(k => $('#' + k).oninput = e => { matchState[k] = +e.target.value; outputs(); debounced(false); });
+  ['we', 'wl', 'wf'].forEach(k => $('#' + k).oninput = e => { matchState[k] = +e.target.value; matchState.preset = 'custom'; outputs(); debounced(false); });
+  $('#rPills').onclick = e => { const b = e.target.closest('button'); if (b) { matchState.radius = +b.dataset.r; $('#radius').value = matchState.radius; load(true); } };
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if (!b) return; const p = PRESETS[b.dataset.p];
+    matchState.preset = b.dataset.p; [matchState.we, matchState.wl, matchState.wf] = p.w; load(false); };
+  $('#msPills').onclick = e => { const b = e.target.closest('button'); if (b) { matchState.minScore = +b.dataset.m; outputs(); render(false); } };
+  $('#top5').onclick = () => { visible().filter(u => !u.lead).slice(0, 5).forEach(u => selected.add(u.id)); render(false); if (selected.size) $('#abar').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
   $('#sector').onchange = e => { matchState.sector = e.target.value; render(false); };
-  $('#minScore').oninput = e => { matchState.minScore = +e.target.value; outputs(); render(false); };
   $('#hideC').onchange = e => { matchState.hideContacted = e.target.checked; render(false); };
   $$('.seg button').forEach(b => b.onclick = () => {
     matchState.view = b.dataset.v; $$('.seg button').forEach(x => x.classList.toggle('on', x === b));
@@ -1900,13 +2061,13 @@ function openOutreach(site, users, done) {
     delivered_mwh: n0(u.score.deliveredMWh), savings: n0(u.score.annualSavings), co2: n0(u.score.co2Tonnes), payback: u.score.paybackYears, sender: $('#oSender')?.value || 'FT Heat Partnerships' });
   const fill = (t, v) => t.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in v ? esc(v[k]) : esc(m)));
   openModal(`
-    <div class="modal-head"><h2>Send outreach to ${users.length} compan${users.length === 1 ? 'y' : 'ies'}</h2><button class="x" data-close>×</button></div>
+    <div class="modal-head"><div><h2>Email ${users.length} compan${users.length === 1 ? 'y' : 'ies'}</h2><div class="muted" style="font-size:12.5px">Each email is personalised automatically. Check the preview on the right, then send.</div></div><button class="x" data-close>×</button></div>
     <div class="modal-body grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px">
       <div>
         <label class="field">Sender name<input type="text" id="oSender" value="FT Heat Partnerships"></label>
         <label class="field" style="margin-top:12px">Subject<input type="text" id="oSubj" value="${esc(META.template.subject)}"></label>
         <label class="field" style="margin-top:12px">Message template<textarea id="oBody" rows="14">${esc(META.template.body)}</textarea></label>
-        <div style="margin-top:8px" class="muted">Click to insert a field:</div>
+        <div style="margin-top:8px" class="muted">The {{…}} fields are filled in for each company. Click one to add it:</div>
         <div class="chips" style="margin-top:6px">${['company', 'contact_name', 'site_name', 'city', 'distance', 'supply_temp', 'delivered_mwh', 'savings', 'co2', 'payback', 'sender'].map(k => `<button class="chip" data-k="${k}">{{${k}}}</button>`).join('')}</div>
         <label class="check" style="margin-top:12px"><input type="checkbox" id="oSave" checked> Save as default template</label>
       </div>
@@ -1982,7 +2143,7 @@ const pipeState = { q: '', country: '', sector: '' };
 async function viewPipeline(app) {
   let leads = await api('/leads');
   app.innerHTML = `
-  <div class="page-head"><div><h1>Partnership pipeline</h1><p>Drag a card to update its status. Signed contracts show up on the global map.</p></div>
+  <div class="page-head"><div><h1>Partnership pipeline</h1><p>Follow every deal from first email to signed contract. Use <b>Move to</b> on a card (or drag it) to update it; click a card for details and notes.</p></div>
     <div class="toolbar">
       <input type="text" id="pq" placeholder="Search company or site…" value="${esc(pipeState.q)}">
       <select id="pc"><option value="">All countries</option>${[...new Set(leads.map(l => l.country))].sort().map(c => `<option value="${c}">${esc(META.countries[c] || c)}</option>`).join('')}</select>
@@ -1999,7 +2160,9 @@ async function viewPipeline(app) {
       return `<div class="col" data-status="${esc(s)}"><div class="col-head">${statusBadge(s)}<span class="muted">${items.length} · ${n0(mwh / 1000)} GWh</span></div>
         <div class="col-body">${items.slice(0, 120).map(l => `<div class="kcard" draggable="true" data-id="${l.id}">
           <div class="t">${esc(l.userName)}</div><div class="m">${esc(l.sectorLabel)}</div><div class="m">↳ ${esc(l.siteName)}</div>
-          <div class="f"><span class="tag">Score ${l.score}</span><span class="muted">${n0(l.deliveredMWh)} MWh · ${n1(l.distanceKm)} km</span></div></div>`).join('')}
+          <div class="f"><span class="tag">${scoreWord(l.score)} · ${l.score}</span><span class="muted">${n0(l.deliveredMWh)} MWh · ${n1(l.distanceKm)} km</span></div>
+          <label class="move">Move to <select data-id="${l.id}" aria-label="Move ${esc(l.userName)} to another stage">${META.statuses.map(o => `<option ${o === l.status ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label></div>`).join('')}
+          ${items.length ? '' : '<div class="col-empty">Nothing here yet</div>'}
           ${items.length > 120 ? `<div class="muted" style="text-align:center;font-size:12px">+${items.length - 120} more, use the filters</div>` : ''}</div></div>`;
     }).join('');
   }
@@ -2018,7 +2181,13 @@ async function viewPipeline(app) {
     const upd = await api('/leads/' + id, { method: 'PATCH', body: { status: col.dataset.status, note: 'Moved on pipeline board' } });
     Object.assign(l, upd); render(); toast(`${l.userName} → ${l.status}`);
   });
-  kb.addEventListener('click', e => { const c = e.target.closest('.kcard'); if (c) openLead(leads.find(l => l.id === c.dataset.id), upd => { const l = leads.find(x => x.id === upd.id); Object.assign(l, upd); render(); }); });
+  kb.addEventListener('change', async e => {
+    const sel = e.target.closest('.move select'); if (!sel) return;
+    const l = leads.find(x => x.id === sel.dataset.id); if (!l || l.status === sel.value) return;
+    const upd = await api('/leads/' + l.id, { method: 'PATCH', body: { status: sel.value, note: 'Moved on pipeline board' } });
+    Object.assign(l, upd); render(); toast(`${l.userName} → ${l.status}`);
+  });
+  kb.addEventListener('click', e => { if (e.target.closest('.move')) return; const c = e.target.closest('.kcard'); if (c) openLead(leads.find(l => l.id === c.dataset.id), upd => { const l = leads.find(x => x.id === upd.id); Object.assign(l, upd); render(); }); });
   render();
 }
 
@@ -2057,7 +2226,7 @@ async function viewOutbox(app) {
   app.innerHTML = `
   <div class="page-head"><div><h1>Outbox</h1><p>Every outreach email sent from HeatMatch. Demo mode: emails are logged here, not delivered.</p></div></div>
   <div class="card grid mail-layout" style="gap:0">
-    <div class="mail-list">${mails.map((m, i) => `<div class="mail-item" data-i="${i}"><div class="to"><span>${esc(m.company)}</span><span class="muted" style="font-weight:400;font-size:12px">${ago(m.at)}</span></div><div class="s">${esc(m.subject)}</div><div class="muted" style="font-size:12px">via ${esc(m.siteName)}</div></div>`).join('') || '<div class="empty">No emails sent yet.<br>Open an installation, select heat users and send outreach.</div>'}</div>
+    <div class="mail-list">${mails.map((m, i) => `<div class="mail-item" data-i="${i}"><div class="to"><span>${esc(m.company)}</span><span class="muted" style="font-weight:400;font-size:12px">${ago(m.at)}</span></div><div class="s">${esc(m.subject)}</div><div class="muted" style="font-size:12px">via ${esc(m.siteName)}</div></div>`).join('') || '<div class="empty">No emails sent yet.<br>Pick a crematorium, select the businesses you like and send them an email.<br><a class="btn sm primary" href="#/installations" style="margin-top:12px">Find heat users →</a></div>'}</div>
     <div class="card-pad" id="mview">${mails.length ? '' : ''}</div>
   </div>`;
   const show = i => {
