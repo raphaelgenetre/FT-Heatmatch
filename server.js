@@ -19,7 +19,7 @@ const STATE_FILE = process.env.HM_STATE_FILE || path.join(__dirname, 'data', 'st
 const PASSWORD_HASH = process.env.HM_PASSWORD_HASH || AUTH.passwordHash;
 const STATUSES = ['Contacted', 'In discussion', 'Feasibility study', 'Contract signed', 'Declined'];
 const ACTIVE = new Set(['Contacted', 'In discussion', 'Feasibility study']);
-const STATE_VERSION = 2; // bump when the data model changes: old saved data is then re-seeded
+const STATE_VERSION = 3; // bump when the data model changes: old saved data is then re-seeded
 
 const BASE_SITES = D.generateSites();
 const BASE_BY_ID = new Map(BASE_SITES.map(s => [s.id, s]));
@@ -137,6 +137,12 @@ function stats() {
       co2Tonnes: signed.reduce((a, l) => a + l.co2Tonnes, 0),
       activeLeads: state.leads.filter(l => ACTIVE.has(l.status)).length,
       emailsSent: state.outbox.length,
+    },
+    // Environmental impact: today (signed), if the active pipeline signs, and the full potential of FT's network
+    impact: {
+      signed: D.impact(signed.reduce((a, l) => a + l.deliveredMWh, 0)),
+      pipeline: D.impact(state.leads.filter(l => ACTIVE.has(l.status)).reduce((a, l) => a + l.deliveredMWh, 0)),
+      potential: D.impact(sites.reduce((a, s) => a + D.annualSupplyMWh(s), 0)),
     },
     countries: Object.values(countries).sort((a, b) => b.units - a.units),
     sectors: sectorList, distanceBands: bands, pipeline, activity: state.activity.slice(0, 12),

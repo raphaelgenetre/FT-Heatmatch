@@ -21,7 +21,7 @@ bundle = f"""(function(){{
 const module = {{ exports: {{}} }};
 (function(module){{ {data_js} }})(module);
 const D = module.exports;
-const KEY = 'ft-heatmatch-state-v2';
+const KEY = 'ft-heatmatch-state-v3';
 {core}
 // ---- authentication (browser-only demo gate; sessionStorage = signed out when the tab is closed) ----
 const AUTHMOD = {{ exports: {{}} }};

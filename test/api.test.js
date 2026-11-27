@@ -82,8 +82,18 @@ test('input limits: too many recipients, oversized request, bad site data', asyn
 
 test('data is saved safely to disk', async () => {
   const saved = JSON.parse(fs.readFileSync(STATE, 'utf8'));
-  assert.equal(saved.version, 2);
+  assert.equal(saved.version, 3);
   assert.ok(!fs.existsSync(STATE + '.tmp'));
+});
+
+test('environmental impact is reported and consistent', async () => {
+  const st = (await call('/api/stats')).data;
+  for (const k of ['signed', 'pipeline', 'potential']) {
+    const im = st.impact[k];
+    assert.ok(im.heatMWh > 0 && im.co2Tonnes > 0 && im.homes > 0 && im.cars > 0 && im.gasM3 > 0, k);
+    assert.ok(Math.abs(im.co2Tonnes - im.heatMWh / 0.9 * 0.202) <= 1, k + ' CO2 formula'); // gas replaced x emission factor
+  }
+  assert.ok(st.impact.potential.heatMWh > st.impact.signed.heatMWh);
 });
 
 test('sign out ends the session', async () => {

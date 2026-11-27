@@ -61,7 +61,7 @@ Every colour lives in `public/theme.css`. Edit the hex codes there and refresh t
 - **Contract likelihood:** sector base rate, plus bonuses for public sector (public support), sustainability commitments, an ageing boiler and fossil heating.
 - **Feasibility and cost:** temperature headroom, pipe length (€900/m plus a €65k substation) and payback against €65/MWh heat.
 - **Search radius:** 500 m recommended, 1 km maximum (beyond that the pipe rarely pays back).
-- CO₂: 0.202 t per MWh of gas heat replaced.
+- **Environmental impact:** heat ÷ 0.9 (gas boiler efficiency) × 0.202 t CO₂ per MWh of gas; shown as CO₂, homes heated, cars off the road, m³ gas and € saved. See docs/ARCHITECTURE.md.
 
 ## Tests
 

@@ -47,7 +47,22 @@
   - **Cost to connect:** temperature fit, pipe length, payback time (pipe + €65k substation vs. heat saved at €65/MWh).
 - CO₂ saved = MWh delivered × 0.202 t (gas heating replaced).
 
-## 5. Security in the prototype
+## 5. Environmental impact
+
+Shown on the overview (today / if the pipeline signs / full potential), on each crematorium ("if the 5 best sign") and per company.
+
+| Step | Assumption |
+|---|---|
+| Recovered heat replaces a gas boiler | Boiler efficiency 90%: 1 MWh of heat saves 1.11 MWh of gas |
+| CO₂ avoided | 0.202 t CO₂ per MWh of gas burned |
+| Gas saved (m³) | 10.55 kWh per m³ of natural gas |
+| "Homes heated" | 12 MWh of heat a year per average European home |
+| "Cars off the road" | 1.5 t CO₂ a year per average European car (~12,000 km) |
+| Money saved | Heat valued at €65/MWh |
+
+Formula: `CO₂ (t) = heat (MWh) ÷ 0.9 × 0.202`. All constants live in `lib/data.js` (`ECON`), so FT can replace them with its own figures. Not yet counted: the electricity used by the circulation pumps (small, about 1–2% of the heat delivered).
+
+## 6. Security in the prototype
 
 | Measure | Why |
 |---|---|
@@ -62,7 +77,7 @@
 
 **Known limit:** the GitHub Pages version runs entirely in the browser. Its sign-in keeps casual visitors out, but a technical user could bypass it. Real protection needs the server version, or a gate in front of the site (see below).
 
-## 6. What production with FT would look like
+## 7. What production with FT would look like
 
 | Area | Prototype | Production |
 |---|---|---|

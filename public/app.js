@@ -13,6 +13,16 @@ const date = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', mont
 const ago = t => { const d = (Date.now() - t) / 864e5; return d < 1 ? 'today' : d < 2 ? 'yesterday' : d < 31 ? `${Math.floor(d)} days ago` : date(t); };
 // distances: metres under 1 km
 const dist = km => km < 1 ? `${Math.round(km * 1000 / 10) * 10} m` : `${n1(km)} km`;
+// environmental impact of `mwh` of recovered heat (same formula as lib/data.js, constants from the server)
+function impactOf(mwh) {
+  const E = META.econ, gas = mwh / E.boilerEfficiency, co2 = gas * E.co2PerMWh;
+  return { heatMWh: mwh, gasM3: gas * 1000 / E.kWhPerM3Gas, co2Tonnes: co2, homes: mwh / E.homeHeatMWh, cars: co2 / E.carCO2t, savingsEur: mwh * E.heatPrice };
+}
+const big = v => v >= 1e6 ? n1(v / 1e6) + ' million' : n0(v);
+function impactMethod() {
+  const E = META.econ;
+  return `Recovered cremator heat replaces heat from gas boilers. 1 MWh of heat saves ${(1 / E.boilerEfficiency).toFixed(2)} MWh of gas (boiler efficiency ${Math.round(E.boilerEfficiency * 100)}%), and burning gas emits ${E.co2PerMWh} t CO₂ per MWh. A home uses about ${E.homeHeatMWh} MWh of heat a year; a car emits about ${E.carCO2t} t CO₂ a year. Heat valued at €${E.heatPrice}/MWh.`;
+}
 const slug = s => s.toLowerCase().replace(/[^a-z]+/g, '-');
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -126,6 +136,25 @@ async function viewOverview(app) {
     <div class="card kpi"><div class="label">Signed partnerships ${tip('Businesses that signed a contract to buy heat from a crematorium.')}</div><div class="value">${n0(t.partnerships)}</div><div class="sub">${t.sitesWithPartnership} sites · ${pct(t.sitesWithPartnership / t.sites)} of the network</div></div>
     <div class="card kpi"><div class="label">Heat delivered ${tip('Heat supplied each year through signed partnerships, replacing mostly gas heating.')}</div><div class="value">${n1(t.deliveredGWh)}<small>GWh/yr</small></div><div class="sub">${n0(t.co2Tonnes)} t CO₂ avoided per year</div></div>
     <div class="card kpi"><div class="label">Active pipeline ${tip('Deals in progress: contacted, in discussion or in a feasibility study.')}</div><div class="value">${n0(t.activeLeads)}</div><div class="sub">${t.sitesInProgress} sites in progress · ${n0(t.emailsSent)} emails sent</div></div>
+  </div>
+  <div class="card impact-card">
+    <div class="card-head"><div><h2>🌱 Environmental impact</h2><div class="muted" style="font-size:12.5px">Gas boilers replaced by recovered cremator heat, per year</div></div>${tip(impactMethod())}</div>
+    <div class="impact-cols">
+      ${[['Today', 'from signed partnerships', st.impact.signed, 'now'],
+         ['If the pipeline signs', 'deals in progress, added on top', st.impact.pipeline, 'next'],
+         ['Full potential', `if all heat from FT's ${n0(t.units)} cremators is used`, st.impact.potential, 'max']].map(([title, sub, im, cls]) => `
+      <div class="impact-col ${cls}">
+        <div class="impact-title">${title}</div><div class="muted" style="font-size:12px">${sub}</div>
+        <div class="impact-big"><b>${big(im.co2Tonnes)}</b> t CO₂ avoided</div>
+        <div class="impact-heat">${n1(im.heatMWh / 1000)} GWh of heat recovered</div>
+        <ul class="impact-eq">
+          <li><span>🏠</span><b>${big(im.homes)}</b> homes heated</li>
+          <li><span>🚗</span><b>${big(im.cars)}</b> cars off the road</li>
+          <li><span>🔥</span><b>${big(im.gasM3)}</b> m³ of gas saved</li>
+          <li><span>💶</span><b>${eur(im.savingsEur)}</b> heating costs saved</li>
+        </ul>
+      </div>`).join('')}
+    </div>
   </div>
   <div class="grid two">
     <div class="card">
@@ -294,6 +323,7 @@ async function viewSite(app, id) {
         <label class="check" style="margin-top:10px"><input type="checkbox" id="hideC" ${matchState.hideContacted ? 'checked' : ''}> Hide companies already contacted</label>
       </section>
       <section><div class="summary-stats" id="summary"></div></section>
+      <section id="impact5" class="impact-section"></section>
     </div>
     <div>
       <div class="card">
@@ -366,6 +396,11 @@ async function viewSite(app, id) {
       <div><b>${list.filter(u => u.score.total >= 50 && u.score.total < 70).length}</b><span>good matches</span></div>
       <div><b>${n0(site.supplyMWh)}</b><span>MWh/yr we can supply</span></div>
       <div><b>${n0(Math.max(0, ...list.map(u => u.score.co2Tonnes)))}</b><span>t CO₂/yr saved by the best match</span></div>`;
+    // impact if the 5 best matches sign (capped at the heat this site actually has)
+    const top5 = list.slice(0, 5), mwh5 = Math.min(site.supplyMWh, top5.reduce((a, u) => a + u.score.deliveredMWh, 0)), im5 = impactOf(mwh5);
+    $('#impact5').innerHTML = top5.length ? `<h3 class="ctl-title" style="margin-bottom:8px">🌱 If the ${top5.length} best sign ${tip(impactMethod())}</h3>
+      <div class="impact-mini"><b>${n0(im5.co2Tonnes)}</b> t CO₂ avoided / year</div>
+      <div class="impact-mini-eq">${n0(im5.heatMWh)} MWh heat · 🏠 ${n0(im5.homes)} homes · 🚗 ${n0(im5.cars)} cars · ${pct(mwh5 / site.supplyMWh)} of this site's waste heat used</div>` : '';
     $('#mrows').innerHTML = list.map(u => `
       <tr class="clickable ${selected.has(u.id) ? 'selected' : ''}" data-id="${u.id}">
         <td><input type="checkbox" class="sel" ${selected.has(u.id) ? 'checked' : ''}></td>
@@ -410,9 +445,9 @@ async function viewSite(app, id) {
         ${sc('Heat demand fit', s.energy)}${sc('Chance of signing', s.likelihood)}${sc('Cost to connect', s.feasibility)}
         <h3 class="section-title">Business case (indicative)</h3>
         <dl class="kv">
-          <dt>Heat deliverable</dt><dd>${n0(s.deliveredMWh)} MWh/yr</dd>
+          <dt>Heat deliverable</dt><dd>${n0(s.deliveredMWh)} MWh/yr <span class="muted" style="font-weight:400">(🏠 ${n0(s.homes)} homes)</span></dd>
           <dt>Annual savings for customer</dt><dd>${eur(s.annualSavings)}</dd>
-          <dt>CO₂ avoided</dt><dd>${n0(s.co2Tonnes)} t/yr</dd>
+          <dt>CO₂ avoided</dt><dd>${n0(s.co2Tonnes)} t/yr <span class="muted" style="font-weight:400">(🚗 ${n0(s.co2Tonnes / META.econ.carCO2t)} cars)</span></dd>
           <dt>Connection capex</dt><dd>${eur(s.capex)}</dd>
           <dt>Payback time ${tip('Years until the cost of the connection is paid back by the heat savings.')}</dt><dd>${s.paybackYears > 40 ? '> 40' : n1(s.paybackYears)} years</dd>
           <dt>Temperature margin ${tip('How much hotter our water is than what they need. Negative means we cannot fully meet their needs.')}</dt><dd>${s.tempGap > 0 ? '+' : ''}${s.tempGap} °C</dd>
